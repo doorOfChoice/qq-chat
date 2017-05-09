@@ -13,7 +13,9 @@ import java.util.concurrent.Executors;
 import cn.seeonce.model.QQTool;
 
 public class QQServer {
+	
 	public static final String ALL = "all";
+	
 	private ServerSocket server;
 	
 	private Map<String, ClientListener> clients;
@@ -27,10 +29,9 @@ public class QQServer {
 		
 		while((client = server.accept()) != null){
 			ClientListener value = new ClientListener(client);
-			String key = value.getIdentity();
-			clients.put(key, value);
 			
-			System.out.println(clients);
+			clients.put(value.getIdentity(), value);
+			
 			pool.execute(value);
 		}
 		
@@ -80,7 +81,7 @@ public class QQServer {
 			while(!isInterrupt){
 				try {
 					String message = input.readUTF();
-					//System.out.println(message);
+					System.out.println(message);
 					Map<String, String> msgXML = QQTool.analyseXML(message);
 					
 					String aimuser = msgXML.get("aimuser");

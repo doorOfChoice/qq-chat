@@ -88,7 +88,6 @@ public class QQLoginFrame extends JFrame{
 					try {
 						//创建一个客户端通信socket
 						client = new Socket("localhost", 9999);
-						
 						//创建好友界面
 						new QQListFrame(QQSql.getUser(username.getText()), client);
 						//隐藏登录界面

@@ -6,10 +6,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.Socket;
 import java.util.Map;
 
 import javax.swing.JButton;
@@ -17,10 +14,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import java.awt.event.WindowAdapter;
 import cn.seeonce.model.QQMessage;
-import cn.seeonce.qq.QQAddFriendFrame.ButtonEvent;
 
 public class QQChatFrame extends JFrame{
 	
@@ -96,8 +91,10 @@ public class QQChatFrame extends JFrame{
 			Object obj = e.getSource();
 			try {
 				if(obj == send){
+					String message = hostuser + " said:)\n" + sendpanel.getText() + "\n";
 					output.writeUTF(QQMessage.msgChat(hostuser, aimuser, 
-							                          sendpanel.getText()));
+							                          message));
+					showpanel.setText(showpanel.getText() + message);
 				}
 			}catch(Exception ex){
 				ex.printStackTrace();

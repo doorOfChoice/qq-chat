@@ -61,11 +61,12 @@ public class QQTool {
 		
 		//一般XML分析器
 	public static Map<String, String> analyseXML(String str){
-			
-		if(!str.matches("<[\\w]+?(\\s+?[\\w]+?=\"(.+?)\")+\\s*/>"))
+		System.out.println(str);
+		
+		if(!str.matches("<[\\w]+?(\\s+?[\\w]+?=\"([\\w\\W]*?)\")+\\s*/>"))
 				return null;
 			
-		Matcher match = getMatcher("([\\w]+?)=\"(.+?)\"", str);
+		Matcher match = getMatcher("([\\w]+?)=\"([\\w\\W]*?)\"", str);
 			
 		Map<String, String> keyValue = new HashMap<String, String>();
 			
@@ -80,5 +81,8 @@ public class QQTool {
 		return keyValue;
 	}
 	
-	
+//	public static void main(String[] args){
+//		String aim = "ew  qewq\n";
+//		System.out.println(analyseXML("<name aimuser=\"" +aim+ "\"/>").get("aimuser"));
+//	}
 }
