@@ -5,9 +5,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -17,7 +20,12 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
+import com.alibaba.fastjson.JSON;
+
+import cn.seeonce.model.QQMessage;
 import cn.seeonce.model.QQSql;
+import cn.seeonce.model.QQTool;
+import cn.seeonce.qq.data.Account;
 
 
 public class QQLoginFrame extends JFrame{
@@ -69,7 +77,32 @@ public class QQLoginFrame extends JFrame{
 	}
 	
 	class ButtonEvent implements ActionListener{
-		
+		private void verifyAccount(String username, String password){
+			try {
+				Socket server = new Socket("localhost", 9998);
+				DataOutputStream output = new DataOutputStream(server.getOutputStream());
+				DataInputStream  input  = new DataInputStream(server.getInputStream());
+				//发送登录请求
+				output.writeUTF(QQMessage.cmLogin(username, username, password));
+				//接受服务器响应
+				String str = input.readUTF();
+				Map<String, String> msgXML = QQTool.analyseXML(str);
+				if(Boolean.valueOf(msgXML.get("success"))){
+					Account user  = JSON.parseObject(msgXML.get("account"),Account.class);
+					
+					Socket client = new Socket("localhost", 9999);
+					
+					new QQListFrame(user, client);
+					
+					setVisible(false);
+					return;
+				}
+				
+				System.out.println("fail");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
 			
@@ -82,21 +115,7 @@ public class QQLoginFrame extends JFrame{
 				//否则只显示
 				signFrame.setVisible(true);
 			}else if(obj == login){
-				//是否登录成功
-				if(QQSql.login(username.getText(), password.getText())){
-					Socket client = null;
-					try {
-						//创建一个客户端通信socket
-						client = new Socket("localhost", 9999);
-						//创建好友界面
-						new QQListFrame(QQSql.getUser(username.getText()), client);
-						//隐藏登录界面
-						QQLoginFrame.this.setVisible(false);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					
-				}
+				verifyAccount(username.getText(), password.getText());
 			}
 		}
 		

@@ -1,5 +1,6 @@
 package cn.seeonce.model;
 
+import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -63,7 +64,7 @@ public class QQTool {
 	public static Map<String, String> analyseXML(String str){
 		System.out.println(str);
 		
-		if(!str.matches("<[\\w]+?(\\s+?[\\w]+?=\"([\\w\\W]*?)\")+\\s*/>"))
+		if(!str.matches("<[\\w]+?(\\s+?[\\w]+?=\"([\\w\\W]*?)\")+/>"))
 				return null;
 			
 		Matcher match = getMatcher("([\\w]+?)=\"([\\w\\W]*?)\"", str);
@@ -75,7 +76,7 @@ public class QQTool {
 		keyValue.put("attribute", attribute);
 			
 		while(match.find()){
-			keyValue.put(match.group(1), match.group(2));
+			keyValue.put(match.group(1), URLDecoder.decode(match.group(2)));
 		}
 			
 		return keyValue;

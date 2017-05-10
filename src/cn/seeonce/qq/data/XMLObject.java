@@ -1,5 +1,6 @@
 package cn.seeonce.qq.data;
 
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class XMLObject {
 			buf.append(key);
 			buf.append("=");
 			buf.append("\"");
-			buf.append(keyValue.get(key));
+			buf.append(URLEncoder.encode(keyValue.get(key)));
 			buf.append("\"");
 		}
 		
@@ -53,4 +54,5 @@ public class XMLObject {
 	public String toString(){
 		return create();
 	}
+	
 }

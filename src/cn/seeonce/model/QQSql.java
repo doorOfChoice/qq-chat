@@ -18,9 +18,9 @@ import cn.seeonce.qq.data.Account;
  */
 
 public class QQSql {
-	private static Connection connect;
+	private  Connection connect;
 	
-	static{
+	public QQSql(){
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			
@@ -37,11 +37,11 @@ public class QQSql {
 		}
 	}
 	
-	public static Connection getConnection(){
+	public Connection getConnection(){
 		return connect;
 	}
 	
-	public static int sign(String username, String password){
+	public synchronized int sign(String username, String password){
 				//创建临时用户
 		Account account = new 
 				Account(username, password, (int)(System.currentTimeMillis() / 1000));
@@ -52,17 +52,16 @@ public class QQSql {
 		if(!QQCheck.validPassword(account.getPassword()))
 		{JOptionPane.showMessageDialog(null, "password is not valid");return -2;}
 		
-		if(QQCheck.accountExist(account.getUsername()))
+		if(accountExist(account.getUsername()))
 		{JOptionPane.showMessageDialog(null, "account is exist");return -3;}
 		
-		Connection conn = QQSql.getConnection();
 		//受影响的行数
 		int effects = 0;
 		
 		String sql = "INSERT INTO qq_user(username,password,signtime) VALUES(?,?,?)";
 		
 		try{
-			PreparedStatement pstate = conn.prepareStatement(sql);
+			PreparedStatement pstate = connect.prepareStatement(sql);
 			pstate.setString(1, account.getUsername());
 			pstate.setString(2, QQTool.sha1(account.getPassword()));
 			pstate.setLong(3, account.getDatetime());
@@ -75,26 +74,27 @@ public class QQSql {
 		return effects;
 	}
 	
-	public static boolean login(String username, String password){
-		
+	public synchronized  boolean login(String username, String password){
+		System.out.println(username);
 		if(!QQCheck.validUsername(username))
 		{JOptionPane.showMessageDialog(null, "username is not valid");return false;}
 		
 		if(!QQCheck.validPassword(password))
 		{JOptionPane.showMessageDialog(null, "password is not valid");return false;}
 		
-		if(!QQCheck.validAccountMessage(username, password))
+		if(!validAccountMessage(username, password))
 		{JOptionPane.showMessageDialog(null, "your message is not right");return false;}
 		
 		return true;
 	}
 	
+
 	/**
 	 * 获取指定用户名的Account对象
 	 * @param username
 	 * @return 用户不存在返回null
 	 */
-	public static Account getUser(String username){
+	public synchronized  Account getUser(String username){
 		String sql = "SELECT * FROM qq_user WHERE username=?";
 		Account account = null;
 		try {
@@ -117,8 +117,8 @@ public class QQSql {
 		return account;
 	}
 	
-	public static boolean addFriend(String hostname, String friendname){
-		if(QQCheck.accountExist(friendname)){
+	public synchronized boolean addFriend(String hostname, String friendname){
+		if(accountExist(friendname)){
 			String sql = "INSERT INTO qq_friends(hostuser,frienduser) VALUES(?,?),(?,?)";
 			int effects = 0;
 			try {
@@ -132,6 +132,7 @@ public class QQSql {
 				effects = pstate.executeUpdate();
 			} catch (SQLException e) {
 				e.printStackTrace();
+				return false;
 			} 
 			
 			return effects > 0;
@@ -141,7 +142,7 @@ public class QQSql {
 		return false;
 	}
 	
-	public static ArrayList<Account> getFriends(String hostname){
+	public synchronized  ArrayList<Account> getFriends(String hostname){
 		String sql = "SELECT * FROM qq_user WHERE username IN " +
 				"(SELECT frienduser FROM qq_friends WHERE hostuser=?)";
 		ArrayList<Account> accounts = new ArrayList<Account>();
@@ -166,7 +167,7 @@ public class QQSql {
 		
 	}
 	
-	public static boolean removeFriend(String hostuser, String frienduser){
+	public synchronized boolean removeFriend(String hostuser, String frienduser){
 		String sql = "DELETE FROM qq_friends WHERE (hostuser=? AND "
 				   + "frienduser=?) OR (hostuser=?" + " AND " + "frienduser=?)";
 		int effects = 0;
@@ -181,9 +182,67 @@ public class QQSql {
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
+			return false;
 		}
 		
 		return effects > 0;
 		
 	}
+	
+	/**
+	 * 验证登录
+	 * @param username
+	 * @param password
+	 * @return 是否成功登录
+	 */
+	@SuppressWarnings("finally")
+	public synchronized boolean validAccountMessage(String username, String password){
+		String sql = "SELECT * FROM qq_user WHERE username=? AND password=?";
+		
+		boolean isExist = false;
+		
+		PreparedStatement pstate;
+		
+		try {
+			pstate = connect.prepareStatement(sql);
+			pstate.setString(1, username);
+			pstate.setString(2, QQTool.sha1(password));
+			ResultSet set = pstate.executeQuery();
+			
+			isExist = set.next();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} 
+		
+		return isExist;
+		
+	}
+	
+	/**
+	 * 判断账户是否已经存在于数据库中
+	 * @param username
+	 * @return true:存在, false:不存在
+	 */
+	public synchronized boolean accountExist(String username){
+		String sql = "SELECT * FROM qq_user WHERE username=?";
+		
+		boolean isExist = false;
+		
+		try {
+			PreparedStatement pstate = connect.prepareStatement(sql);
+			
+			pstate.setString(1, username);
+			
+			ResultSet set = pstate.executeQuery();
+			//判断是否存在第一条记录
+			isExist = !set.next() ? false : true;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return isExist;
+	}
+	
 }
