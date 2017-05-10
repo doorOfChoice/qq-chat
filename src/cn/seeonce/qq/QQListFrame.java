@@ -28,7 +28,8 @@ import javax.swing.JScrollPane;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.seeonce.model.QQListener;
+import cn.seeonce.controller.QQController;
+import cn.seeonce.intface.QQListener;
 import cn.seeonce.model.QQMessage;
 import cn.seeonce.model.QQSql;
 import cn.seeonce.model.QQTool;
@@ -37,23 +38,13 @@ import cn.seeonce.qq.data.Account;
 public class QQListFrame extends JFrame {
 
 	private static final int WIDTH = 240;
+	
 	private static final int HEIGHT = 600;
-	// 客户端socket
-	private Socket client;
-	// 客户端用户信息
-	private Account account;
-	// 客户端好友列表
-	private ArrayList<Account> dataFriends;
-	// 客户端信息列表
-	private Map<String, Stack<String>> dataMessage;
+	
+	private QQController controller;
+	
 	// swing frame映射
 	private Map<String, QQChatFrame> friendsFrame;
-	// 向服务器的接收流
-	private DataInputStream input = null;
-	// 向服务器的输出流
-	private DataOutputStream output = null;
-	// 监听任务
-	private Thread task;
 	// swing 好友列表
 	private JList list;
 	// swing 添加好友按钮
@@ -65,28 +56,12 @@ public class QQListFrame extends JFrame {
 	// swing 添加好友窗口
 	private JFrame addFriendFrame = null;
 
-	public QQListFrame(Account account, Socket client) {
-		this.account = account;
-		this.client = client;
-		try {
-			dataMessage = new HashMap<String, Stack<String>>();
-			friendsFrame = new HashMap<String, QQChatFrame>();
-
-			input = new DataInputStream(client.getInputStream());
-			output = new DataOutputStream(client.getOutputStream());
-			// 开始监听任务
-			task = new Thread(new ServerListener());
-			task.start();
-			// 向服务器注册key-value
-			output.writeUTF(account.getUsername());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public QQListFrame(QQController controller) {
+		this.controller = controller;
+		friendsFrame = new HashMap<String, QQChatFrame>();
 		// 注册组件
 		initAssembly();
 
-		// 获取好友列表
-		sendMessage(QQMessage.cmFriendGet(account.getUsername()));
 	}
 
 	/**
@@ -114,20 +89,17 @@ public class QQListFrame extends JFrame {
 				} else if (e.getButton() == MouseEvent.BUTTON1) {
 					int index = list.getSelectedIndex();
 					if (index != -1) {
-						String aimuser = dataFriends.get(index).getUsername();
-						// 窗口不存在则新建窗口
+						String aimuser = controller.getFriendName(index);
+						// 窗口不存在则新建私聊窗口
 						if (friendsFrame.get(aimuser) == null) {
-							friendsFrame.put(aimuser,
-									new QQChatFrame(account.getUsername(),
-											aimuser, output, friendsFrame));
-							// 将存储的数据发送到聊天栏目
-							Stack<String> storedMessage = dataMessage
-									.get(aimuser);
-							while (storedMessage != null
-									&& !storedMessage.isEmpty()) {
-								friendsFrame.get(aimuser).showMessage(
-										storedMessage.pop());
+							QQChatFrame chatFrame = new QQChatFrame(controller.getAccount().getUsername(),
+									aimuser, controller.getOutput(), friendsFrame);
+							Stack<String> msg = controller.popMessage(aimuser);
+							while(!msg.isEmpty()){
+								chatFrame.showMessage(msg.pop());
 							}
+							QQListFrame.this.updateFriends(controller.getListMessage());
+							friendsFrame.put(aimuser, chatFrame);
 						}
 
 					}
@@ -135,20 +107,12 @@ public class QQListFrame extends JFrame {
 			}
 		});
 
-		setTitle("Friends List");
+		setTitle(controller.getAccount().getUsername());
 		setSize(WIDTH, HEIGHT);
 		setVisible(true);
 		setResizable(false);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);// 默认退出
-	}
-
-	private void sendMessage(String message) {
-		try {
-			output.writeUTF(message);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -163,14 +127,22 @@ public class QQListFrame extends JFrame {
 			if ((index = list.getSelectedIndex()) == -1)
 				return;
 			// 获取好友的用户名
-			String frienduser = dataFriends.get(index).getUsername();
+			String frienduser = controller.getFriendName(index);
 			/*
 			 * 从数据库删除双发数据 删除成功则直接更新本用户好友数据 向服务器发送xml通知另外一个用户删除自己
 			 */
-			sendMessage(QQMessage.cmFriendDelete(account.getUsername(),
+			sendMessage(QQMessage.cmFriendDelete(controller.getAccount().getUsername(),
 					frienduser));
 		}
-
+		
+		private synchronized void sendMessage(String message){
+			try {
+				controller.getOutput().writeUTF(message);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
 			Object obj = arg0.getSource();
@@ -178,7 +150,7 @@ public class QQListFrame extends JFrame {
 			if (obj == addFriend) {
 				if (addFriendFrame == null) {
 					addFriendFrame = new QQAddFriendFrame(
-							account.getUsername(), client);
+							controller.getAccount().getUsername(), controller.getOutput());
 				}
 
 				addFriendFrame.setVisible(true);
@@ -188,137 +160,11 @@ public class QQListFrame extends JFrame {
 		}
 	}
 
-	/**
-	 * 服务器监听类 该类起到了响应所有客户端-服务器数据的作用 并且对服务器传来的数据进行展示
-	 * 
-	 * @author dawndevil
-	 */
-	class ServerListener implements QQListener, Runnable {
-
-		private boolean interrupt = false;
-		
-		public ServerListener() {
-		}
-
-		private void rsFriendGet(String accounts) {
-			dataFriends = (ArrayList<Account>) JSON.parseArray(accounts,
-					Account.class);
-			list.setListData(dataFriends.toArray());
-
-		}
-
-		/* 响应添加好友的命令 */
-		private void commandFriendAdd(Map<String, String> msgXML)
-				throws IOException {
-			String hostuser = msgXML.get("hostuser");
-			String aimuser = msgXML.get("aimuser");
-			String request = hostuser + "想添加你为好友";
-			int select = JOptionPane.showConfirmDialog(null, request, "好友添加",
-					JOptionPane.YES_NO_OPTION);
-			switch (select) {
-			// 同意添加, 则添加双方到数据库, 并且通知另外的朋友更新好友列表
-			case JOptionPane.YES_OPTION:
-				output.writeUTF(QQMessage.rsFriendAdd(hostuser, aimuser, true,
-						null));
-				break;
-			// 拒绝添加
-			case JOptionPane.NO_OPTION:
-				output.writeUTF(QQMessage.rsFriendAdd(hostuser, aimuser, false,
-						null));
-			}
-		}
-
-		private void resultFriendAdd(Map<String, String> msgXML) {
-			String hostuser = msgXML.get("hostuser");
-			JOptionPane.showMessageDialog(null, hostuser + ":已经和你成为好友");
-			rsFriendGet(msgXML.get("accounts"));
-		}
-
-		/* 响应删除好友的结果 */
-		private void resultFriendDelete(Map<String, String> msgXML) {
-			rsFriendGet(msgXML.get("accounts"));
-			JOptionPane.showMessageDialog(null, msgXML.get("hostuser")
-					+ " 从好友列表删除了你");
-		}
-
-		private void resultFriendGet(Map<String, String> msgXML) {
-			rsFriendGet(msgXML.get("accounts"));
-		}
-
-		/**
-		 * 此方法是聊天的核心 将从服务器接收到的数据进行判断，如果双发聊天窗口都是打开的则直接传输数据到私聊窗口上;
-		 * 否则,存储数据到临时栈中，等待新开私聊窗口的时候更新数据
-		 * 
-		 * @param hostuser
-		 * @param aimuser
-		 * @param message
-		 */
-		private void messageGet(Map<String, String> msgXML) {
-			String hostuser = msgXML.get("hostuser");
-			String message = msgXML.get("message");
-			// 对方发送数据
-			Stack<String> msgs = dataMessage.get(hostuser);
-			// 对方的私聊窗口
-			QQChatFrame chatFrame = friendsFrame.get(hostuser);
-
-			if (chatFrame == null) {
-				if (msgs == null) {
-					dataMessage.put(hostuser, new Stack<String>());
-				}
-				dataMessage.get(hostuser).push(message);
-			} else {
-				chatFrame.showMessage(message);
-			}
-		}
-
-		private void analyseMessage(Map<String, String> msgXML)
-				throws IOException {
-			String attr = msgXML.get("attribute");
-
-			if (attr.equals(QQMessage.COMMAND)) {
-				// 接受到好友添加请求
-				String name = msgXML.get("name");
-				// 添加好友请求
-				if (name.equals(QQMessage.C_ADD_FRIEND)) {
-					commandFriendAdd(msgXML);
-				}
-			} else if (attr.equals(QQMessage.RESULT)) {
-				String name = msgXML.get("name");
-				// 添加好友的结果
-				if (name.equals(QQMessage.S_ADD_FRIEND)) {
-					resultFriendAdd(msgXML);
-					// 删除好友的结果
-				} else if (name.equals(QQMessage.S_DELETE_FRIEND)) {
-					resultFriendDelete(msgXML);
-				} else if (name.equals(QQMessage.S_GET_FRIENDS)) {
-					resultFriendGet(msgXML);
-				}
-			} else if (attr.equals(QQMessage.MESSAGE)) {
-				messageGet(msgXML);
-			}
-		}
-
-		@Override
-		public void listen() {
-			while (!interrupt) {
-				try {
-					String message = input.readUTF();
-					// System.out.println("client: " + message);
-
-					Map<String, String> msgXML = QQTool.analyseXML(message);
-
-					analyseMessage(msgXML);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-		@Override
-		public void run() {
-			listen();
-		}
-
+	public synchronized void updateFriends(String[] listCompany){
+		list.setListData(listCompany);
 	}
-
+	
+	public synchronized QQChatFrame getChatFrame(String aimuser){
+		return friendsFrame.get(aimuser);
+	}
 }

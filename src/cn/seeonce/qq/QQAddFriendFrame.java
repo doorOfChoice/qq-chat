@@ -20,22 +20,15 @@ public class QQAddFriendFrame extends JFrame{
 
 	private static final long serialVersionUID = 1L;
 	
-	private Socket		     client;
 	private DataOutputStream output;
 	private String           username;
 	
 	private JTextField       friendName;
 	private JButton          add;
 	
-	public QQAddFriendFrame(String username, Socket client){
-		this.client   = client;
+	public QQAddFriendFrame(String username, DataOutputStream output){
+		this.output   = output;
 		this.username = username;
-		
-		try{
-			output = new DataOutputStream(client.getOutputStream());
-		}catch(Exception ex){
-			ex.printStackTrace();
-		}
 		
 		initAssembly();
 	}

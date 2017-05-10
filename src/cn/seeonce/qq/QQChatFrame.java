@@ -28,7 +28,7 @@ public class QQChatFrame extends JFrame{
 	private JTextArea        showpanel;
 	private JTextArea		 sendpanel;
 	private JButton          send;
-	
+	//private JButton			 delivery;
 	
 	
 	public QQChatFrame(String hostuser, String aimuser, 
@@ -52,8 +52,9 @@ public class QQChatFrame extends JFrame{
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new GridLayout(1, 4, 0, 0));
 		buttonPanel.add(send = new JButton("send"));
+		//buttonPanel.add(delivery  = new JButton("deliver file"));
 		send.addActionListener(new ButtonEvent());
-		
+		//delivery.addActionListener(new ButtonEvent());
 		menu.add(buttonPanel);
 		
 		add(new JScrollPane(showpanel = new JTextArea()), BorderLayout.CENTER);
@@ -68,7 +69,7 @@ public class QQChatFrame extends JFrame{
 			}
 		});
 		
-		setTitle("friend add");
+		setTitle(hostuser +  " is chatting with " + aimuser);
 		setSize(400, 500);
 		setVisible(true);
 		setResizable(false);

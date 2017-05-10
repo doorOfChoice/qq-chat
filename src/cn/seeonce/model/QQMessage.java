@@ -10,13 +10,17 @@ public class QQMessage {
 	public final static String MESSAGE = "message";
 	public final static String RESULT  = "result";
 	
-	public final static String C_LOGIN = "login";
-	public final static String C_ADD_FRIEND = "friendAdd";
-	public final static String C_GET_FRIENDS = "friendGet";
+	public final static String C_LOGIN         = "login";
+	public final static String C_SIGN          = "sign" ;
+	public final static String C_ADD_FRIEND    = "friendAdd";
+	public final static String C_GET_FRIENDS   = "friendGet";
 	public final static String C_DELETE_FRIEND = "friendDelete";
-	public final static String S_ADD_FRIEND = C_ADD_FRIEND;
-	public final static String S_GET_FRIENDS = C_GET_FRIENDS;
+	
+	public final static String S_SIGN		   = C_SIGN;
+	public final static String S_ADD_FRIEND    = C_ADD_FRIEND;
+	public final static String S_GET_FRIENDS   = C_GET_FRIENDS;
 	public final static String S_DELETE_FRIEND = C_DELETE_FRIEND;
+	
 	public static String msgChat(String hostuser, String aimuser, String message){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(MESSAGE);
@@ -30,6 +34,17 @@ public class QQMessage {
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(COMMAND);
 		xml.add("name", C_LOGIN);
+		xml.add("username", username);
+		xml.add("password", password);
+		xml.add("aimuser", aimuser);
+		
+		return xml.toString();
+	}
+	
+	public static String cmSign(String aimuser, String username, String password){
+		XMLObject xml = new XMLObject();
+		xml.setAttribute(COMMAND);
+		xml.add("name", S_SIGN);
 		xml.add("username", username);
 		xml.add("password", password);
 		xml.add("aimuser", aimuser);
@@ -67,6 +82,7 @@ public class QQMessage {
 	}
 	
 	
+	
 	public static String rsFriendGet(String aimuser, ArrayList<Account> accounts){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(RESULT);
@@ -88,9 +104,18 @@ public class QQMessage {
 		
 		return xml.toString();
 	}
-
-
 	
+	public static String rsSign(String aimuser, boolean success
+			, String message){
+		XMLObject xml = new XMLObject();
+		xml.setAttribute(RESULT);
+		xml.add("name", S_SIGN);
+		xml.add("message", message);
+		xml.add("success", success + "");
+		xml.add("aimuser", aimuser);
+		
+		return xml.toString();
+	}
 	
 	public static String rsFriendAdd(String hostuser, String aimuser
 			, boolean success, ArrayList<Account> friends){

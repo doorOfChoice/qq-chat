@@ -20,6 +20,10 @@ import cn.seeonce.qq.data.Account;
 public class QQSql {
 	private  Connection connect;
 	
+	public final static int UNVALID_USERNAME = -1;
+	public final static int UNVALID_PASSWORD = -2;
+	public final static int EXIST_USER = -3;
+	public final static int SUCCESS = 0;
 	public QQSql(){
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -47,13 +51,13 @@ public class QQSql {
 				Account(username, password, (int)(System.currentTimeMillis() / 1000));
 		
 		if(!QQCheck.validUsername(account.getUsername()))
-		{JOptionPane.showMessageDialog(null, "username is not valid");return -1;}
+		{return UNVALID_USERNAME;}
 		
 		if(!QQCheck.validPassword(account.getPassword()))
-		{JOptionPane.showMessageDialog(null, "password is not valid");return -2;}
+		{return UNVALID_PASSWORD;}
 		
 		if(accountExist(account.getUsername()))
-		{JOptionPane.showMessageDialog(null, "account is exist");return -3;}
+		{return EXIST_USER;}
 		
 		//受影响的行数
 		int effects = 0;
@@ -71,19 +75,19 @@ public class QQSql {
 			ex.printStackTrace();
 		}
 		
-		return effects;
+		return SUCCESS;
 	}
 	
 	public synchronized  boolean login(String username, String password){
 		System.out.println(username);
 		if(!QQCheck.validUsername(username))
-		{JOptionPane.showMessageDialog(null, "username is not valid");return false;}
+		{return false;}
 		
 		if(!QQCheck.validPassword(password))
-		{JOptionPane.showMessageDialog(null, "password is not valid");return false;}
+		{return false;}
 		
 		if(!validAccountMessage(username, password))
-		{JOptionPane.showMessageDialog(null, "your message is not right");return false;}
+		{return false;}
 		
 		return true;
 	}

@@ -82,6 +82,10 @@ public class QQTool {
 		return keyValue;
 	}
 	
+	public static String first2up(String str){
+		return Character.toUpperCase(str.charAt(0)) + str.substring(1);
+	}
+	
 //	public static void main(String[] args){
 //		String aim = "ew  qewq\n";
 //		System.out.println(analyseXML("<name aimuser=\"" +aim+ "\"/>").get("aimuser"));

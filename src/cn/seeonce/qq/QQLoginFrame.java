@@ -22,6 +22,7 @@ import javax.swing.JTextField;
 
 import com.alibaba.fastjson.JSON;
 
+import cn.seeonce.controller.QQController;
 import cn.seeonce.model.QQMessage;
 import cn.seeonce.model.QQSql;
 import cn.seeonce.model.QQTool;
@@ -92,13 +93,10 @@ public class QQLoginFrame extends JFrame{
 					
 					Socket client = new Socket("localhost", 9999);
 					
-					new QQListFrame(user, client);
+					new QQController(user, client);
 					
 					setVisible(false);
-					return;
 				}
-				
-				System.out.println("fail");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
