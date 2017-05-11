@@ -20,10 +20,10 @@ import javax.swing.JTextField;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.seeonce.model.QQMessage;
-import cn.seeonce.model.QQSql;
-import cn.seeonce.model.QQTool;
-import cn.seeonce.qq.data.Account;
+import cn.seeonce.data.Account;
+import cn.seeonce.library.QQMessage;
+import cn.seeonce.library.QQTool;
+import cn.seeonce.model.QQModel;
 
 public class QQSignFrame extends JFrame{
 	/**

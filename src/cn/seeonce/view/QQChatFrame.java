@@ -24,8 +24,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import java.awt.event.WindowAdapter;
-import cn.seeonce.model.QQMessage;
-import cn.seeonce.model.QQTool;
+
+import cn.seeonce.library.QQMessage;
+import cn.seeonce.library.QQTool;
 
 public class QQChatFrame extends JFrame{
 	

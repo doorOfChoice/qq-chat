@@ -1,4 +1,4 @@
-package cn.seeonce.model;
+package cn.seeonce.library;
 
 import java.io.DataOutputStream;
 import java.io.FileNotFoundException;

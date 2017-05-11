@@ -1,9 +1,10 @@
-package cn.seeonce.model;
+package cn.seeonce.library;
 
 import java.util.ArrayList;
 
-import cn.seeonce.qq.data.Account;
-import cn.seeonce.qq.data.XMLObject;
+import cn.seeonce.data.Account;
+import cn.seeonce.data.XMLObject;
+
 import com.alibaba.fastjson.JSON;
 public class QQMessage {
 	public final static String COMMAND = "command";

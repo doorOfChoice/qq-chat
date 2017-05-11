@@ -28,12 +28,12 @@ import javax.swing.JScrollPane;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.seeonce.controller.QQClient;
+import cn.seeonce.controller.ClientLocalController;
+import cn.seeonce.data.Account;
 import cn.seeonce.intface.QQListener;
-import cn.seeonce.model.QQMessage;
-import cn.seeonce.model.QQSql;
-import cn.seeonce.model.QQTool;
-import cn.seeonce.qq.data.Account;
+import cn.seeonce.library.QQMessage;
+import cn.seeonce.library.QQTool;
+import cn.seeonce.model.QQModel;
 
 public class QQListFrame extends JFrame {
 
@@ -42,7 +42,7 @@ public class QQListFrame extends JFrame {
 	private static final int HEIGHT = 600;
 	
 	//聊天服务器控制器的引用
-	private QQClient controller;
+	private ClientLocalController controller;
 	// swing frame映射
 	private Map<String, QQChatFrame> friendsFrame;
 	// swing 好友列表
@@ -56,7 +56,7 @@ public class QQListFrame extends JFrame {
 	// swing 添加好友窗口
 	private JFrame addFriendFrame = null;
 
-	public QQListFrame(QQClient controller) {
+	public QQListFrame(ClientLocalController controller) {
 		this.controller = controller;
 		friendsFrame = new HashMap<String, QQChatFrame>();
 		// 注册组件

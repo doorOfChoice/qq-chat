@@ -22,11 +22,12 @@ import javax.swing.JTextField;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.seeonce.controller.QQClient;
-import cn.seeonce.model.QQMessage;
-import cn.seeonce.model.QQSql;
-import cn.seeonce.model.QQTool;
-import cn.seeonce.qq.data.Account;
+import cn.seeonce.controller.ClientLocalController;
+import cn.seeonce.core.EntranceClient;
+import cn.seeonce.data.Account;
+import cn.seeonce.library.QQMessage;
+import cn.seeonce.library.QQTool;
+import cn.seeonce.model.QQModel;
 
 
 public class QQLoginFrame extends JFrame{
@@ -39,7 +40,8 @@ public class QQLoginFrame extends JFrame{
 	private JButton		   openSign;
 	private JTextField     username;
 	private JPasswordField password;
-	private JFrame         signFrame = null;
+	private JFrame         signFrame;
+	
 	public QQLoginFrame(){
 		initAssembly();
 		setTitle("See Once Login");
@@ -72,11 +74,7 @@ public class QQLoginFrame extends JFrame{
 		add(password);
 		
 	}
-	
-	public static void main(String[] args) {
-		new QQLoginFrame();
-	}
-	
+		
 	class ButtonEvent implements ActionListener{
 		private void verifyAccount(String username, String password){
 			try {
@@ -90,13 +88,13 @@ public class QQLoginFrame extends JFrame{
 				Map<String, String> msgXML = QQTool.analyseXML(str);
 				if(Boolean.valueOf(msgXML.get("success"))){
 					Account user  = JSON.parseObject(msgXML.get("account"),Account.class);
-					
 					Socket client = new Socket("localhost", 9999);
-					
-					new QQClient(user, client);
-					
+					EntranceClient.newClient(client, user);
 					setVisible(false);
+					return;
 				}
+				
+				JOptionPane.showMessageDialog(null, "登录失败");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

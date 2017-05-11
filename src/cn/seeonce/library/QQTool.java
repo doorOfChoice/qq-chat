@@ -1,4 +1,4 @@
-package cn.seeonce.model;
+package cn.seeonce.library;
 
 import java.lang.reflect.Method;
 import java.net.URLDecoder;

@@ -12,8 +12,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import cn.seeonce.model.QQMessage;
-import cn.seeonce.model.QQSql;
+import cn.seeonce.library.QQMessage;
+import cn.seeonce.model.QQModel;
 
 
 public class QQAddFriendFrame extends JFrame{

@@ -16,11 +16,11 @@ import javax.swing.JOptionPane;
 
 import com.alibaba.fastjson.JSON;
 
+import cn.seeonce.data.Account;
 import cn.seeonce.intface.QQListener;
-import cn.seeonce.model.QQFileWrite;
-import cn.seeonce.model.QQMessage;
-import cn.seeonce.model.QQTool;
-import cn.seeonce.qq.data.Account;
+import cn.seeonce.library.QQFileWrite;
+import cn.seeonce.library.QQMessage;
+import cn.seeonce.library.QQTool;
 import cn.seeonce.view.QQChatFrame;
 import cn.seeonce.view.QQListFrame;
 
@@ -30,7 +30,7 @@ import cn.seeonce.view.QQListFrame;
  * @author dawndevil
  *
  */
-public class QQClient implements Runnable{
+public class ClientLocalController{
 
 		// 客户端socket
 		private Socket client;
@@ -51,17 +51,15 @@ public class QQClient implements Runnable{
 		
 		private QQListFrame friendList;
 		
-		public QQClient(Account account, Socket client){
+		public ClientLocalController(Account account, Socket client,
+				 DataInputStream input, DataOutputStream output){
 			this.account = account;
 			this.client  = client;
+			this.input   = input;
+			this.output  = output;
 			dataMessage = new HashMap<String, Stack<String>>();
 			fileStreams = new HashMap<String, QQFileWrite>();
 			try {
-				input = new DataInputStream(client.getInputStream());
-				output = new DataOutputStream(client.getOutputStream());
-				// 开始监听任务
-				task = new Thread(this);
-				task.start();
 				// 向服务器注册key-value，提示已经上线
 				output.writeUTF(account.getUsername());
 			} catch (IOException e) {
@@ -103,7 +101,7 @@ public class QQClient implements Runnable{
 		 * @param msgXML
 		 * @throws IOException
 		 */
-		private synchronized void commandFriendAdd(Map<String, String> msgXML)
+		public synchronized void commandFriendAdd(Map<String, String> msgXML)
 				throws IOException {
 			String hostuser = msgXML.get("hostuser");
 			String aimuser = msgXML.get("aimuser");
@@ -123,7 +121,7 @@ public class QQClient implements Runnable{
 			}
 		}
 		
-		private synchronized void commandDeliver(Map<String, String> msgXML)
+		public synchronized void commandDeliver(Map<String, String> msgXML)
 				throws IOException {
 			String hostuser = msgXML.get("hostuser");
 			String aimuser  = msgXML.get("aimuser");
@@ -148,7 +146,7 @@ public class QQClient implements Runnable{
 		 * 服务器告知朋友是否添加成功, 成功的话更新好友列表
 		 * @param msgXML
 		 */
-		private synchronized void resultDeliver(Map<String, String> msgXML) {
+		public synchronized void resultDeliver(Map<String, String> msgXML) {
 			String hostuser = msgXML.get("hostuser");
 			
 			if(Boolean.valueOf(msgXML.get("success"))){
@@ -159,7 +157,7 @@ public class QQClient implements Runnable{
 			JOptionPane.showMessageDialog(null, hostuser + " 拒绝了你的传输请求");
 		}
 		
-		private synchronized void resultFriendAdd(Map<String, String> msgXML){
+		public synchronized void resultFriendAdd(Map<String, String> msgXML){
 			String hostuser = msgXML.get("hostuser");
 			if(Boolean.valueOf(msgXML.get("success"))){
 				JOptionPane.showMessageDialog(null, hostuser + " 已经和你成为好友");
@@ -171,7 +169,7 @@ public class QQClient implements Runnable{
 		 * 删除好友列表结果
 		 * @param msgXML
 		 */
-		private synchronized void resultFriendDelete(Map<String, String> msgXML) {
+		public synchronized void resultFriendDelete(Map<String, String> msgXML) {
 			rsFriendGet(msgXML.get("accounts"));
 			JOptionPane.showMessageDialog(null, msgXML.get("hostuser")
 					+ " 从好友列表删除了你");
@@ -180,11 +178,11 @@ public class QQClient implements Runnable{
 		 * 服务器返还的最新的好友列表
 		 * @param msgXML
 		 */
-		private synchronized void resultFriendGet(Map<String, String> msgXML) {
+		public synchronized void resultFriendGet(Map<String, String> msgXML) {
 			rsFriendGet(msgXML.get("accounts"));
 		}
 
-		private synchronized void messageDeliver(Map<String, String> msgXML) {
+		public synchronized void messageDeliver(Map<String, String> msgXML) {
 			String basename = msgXML.get("basename");
 			QQFileWrite writer = fileStreams.get(basename);
 			if(writer != null){
@@ -202,7 +200,7 @@ public class QQClient implements Runnable{
 		 * @param aimuser
 		 * @param message
 		 */
-		private synchronized void messageChat(Map<String, String> msgXML) {
+		public synchronized void messageChat(Map<String, String> msgXML) {
 			String hostuser = msgXML.get("hostuser");
 			String message = msgXML.get("message");
 			// 对方发送数据
@@ -222,32 +220,6 @@ public class QQClient implements Runnable{
 			friendList.updateFriends(getListMessage());
 		}
 
-		private void analyseMessage(Map<String, String> msgXML)
-				throws IOException {
-			
-			String attr = msgXML.get("attribute");
-			
-			String methodName = attr + QQTool.first2up(msgXML.get("name"));
-			
-			try {
-				Method method = getClass().getDeclaredMethod(methodName, Map.class);
-				System.out.println(msgXML);
-				method.invoke(this, msgXML);
-			}catch(Exception ex){ex.printStackTrace();}
-
-		}
-		
-		@Override
-		public void run() {
-			while (true) {
-				try {
-					String message = input.readUTF();
-					analyseMessage(QQTool.analyseXML(message));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
 		
 		/**
 		 * ===================================================

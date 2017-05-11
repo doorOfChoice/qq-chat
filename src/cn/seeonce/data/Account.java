@@ -1,4 +1,4 @@
-package cn.seeonce.qq.data;
+package cn.seeonce.data;
 
 import java.io.Serializable;
 

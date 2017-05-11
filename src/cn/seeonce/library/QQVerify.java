@@ -1,4 +1,4 @@
-package cn.seeonce.model;
+package cn.seeonce.library;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

@@ -9,7 +9,9 @@ import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
 
-import cn.seeonce.qq.data.Account;
+import cn.seeonce.data.Account;
+import cn.seeonce.library.QQTool;
+import cn.seeonce.library.QQVerify;
 
 
 /**
@@ -17,14 +19,15 @@ import cn.seeonce.qq.data.Account;
  * @author dawndevil
  */
 
-public class QQSql {
+public class QQModel {
 	private  Connection connect;
 	
 	public final static int UNVALID_USERNAME = -1;
 	public final static int UNVALID_PASSWORD = -2;
 	public final static int EXIST_USER = -3;
 	public final static int SUCCESS = 0;
-	public QQSql(){
+	
+	public QQModel(){
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			

@@ -1,4 +1,4 @@
-package cn.seeonce.qq.data;
+package cn.seeonce.data;
 
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -11,6 +11,7 @@ import java.util.Map;
  */
 public class XMLObject {
 	private String attribute = null;
+	
 	private Map<String, String> keyValue;
 	
 	public XMLObject(){
@@ -20,6 +21,10 @@ public class XMLObject {
 	//设置属性 <XML name="hello"/> XML是属性
 	public void setAttribute(String attribute){
 		this.attribute = attribute;
+	}
+	
+	public String getAttribute(){
+		return attribute;
 	}
 	
 	//添加子属性 比如name
