@@ -1,5 +1,6 @@
 package cn.seeonce.model;
 
+import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -86,8 +87,22 @@ public class QQTool {
 		return Character.toUpperCase(str.charAt(0)) + str.substring(1);
 	}
 	
-//	public static void main(String[] args){
-//		String aim = "ew  qewq\n";
-//		System.out.println(analyseXML("<name aimuser=\"" +aim+ "\"/>").get("aimuser"));
-//	}
+	public static String basename(String filename){
+		int start = filename.lastIndexOf("/");
+		return start == -1 ? filename : filename.substring(start + 1);
+	}
+	
+	public static byte[] getBytes(byte[] src, int offset, int len){
+		byte[] nBuf = new byte[len];
+		for(int i = 0; i < len; i++){
+			nBuf[i] = src[i + offset];
+		}
+		
+		return nBuf;
+	}
+	
+	public static void main(String[] args){
+		String aim = "ew  qewq\n";
+		System.out.println(analyseXML("<name aimuser=\"" +aim+ "\"/>").get("aimuser"));
+	}
 }

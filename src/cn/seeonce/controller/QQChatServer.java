@@ -10,29 +10,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import com.alibaba.fastjson.JSON;
-
 import cn.seeonce.model.QQMessage;
 import cn.seeonce.model.QQSql;
 import cn.seeonce.model.QQTool;
 
-public class QQServer {
-	
+public class QQChatServer {
+	//聊天服务器
 	private ServerSocket server;
-	
+	//登录服务器
 	private QQLoginServer loginServer;
-	
+	//所有在线的用户
 	private Map<String, ClientListener> clients;
-	
+	//sql model
 	private QQSql model ;
 	
-	public QQServer(QQSql model) throws IOException{
+	public QQChatServer(QQSql model) throws IOException{
 		this.model = model;
 		
 		clients = new HashMap<String, ClientListener>();
 		server  = new ServerSocket(9999);
 		loginServer = new QQLoginServer(model);
+		
 		ExecutorService pool = Executors.newCachedThreadPool();
 		
 		Socket client = null;
@@ -95,15 +93,14 @@ public class QQServer {
 					
 					String methodName = null;
 					
-					if(attr.equals(QQMessage.COMMAND) || attr.equals(QQMessage.RESULT))
-					{methodName = attr + QQTool.first2up(msgXML.get("name"));}
-					else
-					{methodName = "messageGet";}
+					methodName = attr + QQTool.first2up(msgXML.get("name"));
 					
 					try {
-						Method method = getClass().getDeclaredMethod(methodName, String.class);
-						method.invoke(this, message);
-					}catch(Exception ex){ex.printStackTrace();}
+						Method method = getClass().getDeclaredMethod(methodName, String.class, Map.class);
+						method.invoke(this, message, msgXML);
+					}catch(Exception ex){
+						shiftDirect(message, msgXML);
+					}
 				/*
 				 * 客户端异常退出
 				 * 通常就是用户关闭了程序，检测用户离线
@@ -116,23 +113,25 @@ public class QQServer {
 			}
 		}
 		
-		
-		private synchronized void commandFriendAdd(String message){
-			Map<String, String> msgXML = QQTool.analyseXML(message);
+		/**
+		 * 直接交付信息给指定用户
+		 * 有些数据服务器不做处理,仅仅只是做转发,直接使用此方法
+		 * @param message
+		 * @param msgXML
+		 */
+		synchronized void shiftDirect(String message, Map<String, String> msgXML){
 			String aimuser = msgXML.get("aimuser");
 			if(clients.get(aimuser) != null)
 				clients.get(msgXML.get("aimuser")).sendMessage(message);
 		}
 		
-		private synchronized void commandFriendGet(String message){
-			Map<String, String> msgXML = QQTool.analyseXML(message);
+		private synchronized void commandFriendGet(String message, Map<String, String> msgXML){
 			String aimuser = msgXML.get("aimuser");
 			clients.get(aimuser).sendMessage(QQMessage
 					   .rsFriendGet(aimuser, model.getFriends(aimuser)));
 		}
 		
-		private synchronized void commandFriendDelete(String message){
-			Map<String, String> msgXML = QQTool.analyseXML(message);
+		private synchronized void commandFriendDelete(String message, Map<String, String> msgXML){
 			String hostuser = msgXML.get("hostuser");
 			String aimuser  = msgXML.get("aimuser") ;
 			if(model.removeFriend(hostuser, aimuser)){
@@ -148,8 +147,8 @@ public class QQServer {
 			}
 		}
 		
-		private synchronized void resultFriendAdd(String message){
-			Map<String, String> msgXML = QQTool.analyseXML(message);
+		
+		private synchronized void resultFriendAdd(String message, Map<String, String> msgXML){
 			boolean success = false;
 			String hostuser = msgXML.get("hostuser");
 			String aimuser  = msgXML.get("aimuser") ;
@@ -165,8 +164,7 @@ public class QQServer {
 		
 		}
 		
-		private synchronized void messageGet(String message){
-			Map<String, String> msgXML = QQTool.analyseXML(message);
+		private synchronized void messageChat(String message, Map<String, String> msgXML){
 			String aimuser = msgXML.get("aimuser");
 			
 			if(clients.get(aimuser) != null)
@@ -177,7 +175,7 @@ public class QQServer {
 	
 	
 	public static void main(String[] args) throws IOException {
-		new QQServer(new QQSql());
+		new QQChatServer(new QQSql());
 	}
 
 }

@@ -50,10 +50,10 @@ public class QQSql {
 		Account account = new 
 				Account(username, password, (int)(System.currentTimeMillis() / 1000));
 		
-		if(!QQCheck.validUsername(account.getUsername()))
+		if(!QQVerify.validUsername(account.getUsername()))
 		{return UNVALID_USERNAME;}
 		
-		if(!QQCheck.validPassword(account.getPassword()))
+		if(!QQVerify.validPassword(account.getPassword()))
 		{return UNVALID_PASSWORD;}
 		
 		if(accountExist(account.getUsername()))
@@ -80,10 +80,10 @@ public class QQSql {
 	
 	public synchronized  boolean login(String username, String password){
 		System.out.println(username);
-		if(!QQCheck.validUsername(username))
+		if(!QQVerify.validUsername(username))
 		{return false;}
 		
-		if(!QQCheck.validPassword(password))
+		if(!QQVerify.validPassword(password))
 		{return false;}
 		
 		if(!validAccountMessage(username, password))

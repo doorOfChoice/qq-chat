@@ -2,6 +2,8 @@ package cn.seeonce.controller;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.Socket;
@@ -15,11 +17,12 @@ import javax.swing.JOptionPane;
 import com.alibaba.fastjson.JSON;
 
 import cn.seeonce.intface.QQListener;
+import cn.seeonce.model.QQFileWrite;
 import cn.seeonce.model.QQMessage;
 import cn.seeonce.model.QQTool;
-import cn.seeonce.qq.QQChatFrame;
-import cn.seeonce.qq.QQListFrame;
 import cn.seeonce.qq.data.Account;
+import cn.seeonce.view.QQChatFrame;
+import cn.seeonce.view.QQListFrame;
 
 /**
  * QQ Client的控制器, 主要起到请求服务器数据, 并且将数据传给窗口层处理的作用
@@ -27,7 +30,7 @@ import cn.seeonce.qq.data.Account;
  * @author dawndevil
  *
  */
-public class QQController implements Runnable{
+public class QQClient implements Runnable{
 
 		// 客户端socket
 		private Socket client;
@@ -37,6 +40,8 @@ public class QQController implements Runnable{
 		private ArrayList<Account> dataFriends;
 		// 客户端信息列表
 		private Map<String, Stack<String>> dataMessage;
+		// 所有等待接受的文件流
+		private Map<String, QQFileWrite> fileStreams;
 		// 向服务器的接收流
 		private DataInputStream input = null;
 		// 向服务器的输出流
@@ -46,21 +51,20 @@ public class QQController implements Runnable{
 		
 		private QQListFrame friendList;
 		
-		public QQController(Account account, Socket client){
+		public QQClient(Account account, Socket client){
 			this.account = account;
 			this.client  = client;
 			dataMessage = new HashMap<String, Stack<String>>();
-
+			fileStreams = new HashMap<String, QQFileWrite>();
 			try {
 				input = new DataInputStream(client.getInputStream());
 				output = new DataOutputStream(client.getOutputStream());
 				// 开始监听任务
 				task = new Thread(this);
 				task.start();
-				// 向服务器注册key-value
+				// 向服务器注册key-value，提示已经上线
 				output.writeUTF(account.getUsername());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			friendList = new QQListFrame(this);
@@ -118,20 +122,51 @@ public class QQController implements Runnable{
 						null));
 			}
 		}
+		
+		private synchronized void commandDeliver(Map<String, String> msgXML)
+				throws IOException {
+			String hostuser = msgXML.get("hostuser");
+			String aimuser  = msgXML.get("aimuser");
+			String basename = QQTool.basename(msgXML.get("filename")); 
+			String request = hostuser + " 想传输文件 " + basename + "给你";
+			
+			int select = JOptionPane.showConfirmDialog(null, request, "文件传输",
+					JOptionPane.YES_NO_OPTION);
+			
+			if(select == JOptionPane.YES_OPTION){
+				QQFileWrite writer = new QQFileWrite(basename);
+				fileStreams.put(basename, writer);
+				sendMessage(QQMessage.rsDeliver(aimuser, hostuser, 
+						true, msgXML.get("filename")));
+				return ;
+			}
+			sendMessage(QQMessage.rsDeliver(aimuser, hostuser, 
+					false, null));
+		}
+		
 		/**
 		 * 服务器告知朋友是否添加成功, 成功的话更新好友列表
 		 * @param msgXML
 		 */
-		private synchronized void resultFriendAdd(Map<String, String> msgXML) {
+		private synchronized void resultDeliver(Map<String, String> msgXML) {
+			String hostuser = msgXML.get("hostuser");
+			
+			if(Boolean.valueOf(msgXML.get("success"))){
+				friendList.startDeliver(hostuser, msgXML.get("filename"));
+				return;
+			}
+			
+			JOptionPane.showMessageDialog(null, hostuser + " 拒绝了你的传输请求");
+		}
+		
+		private synchronized void resultFriendAdd(Map<String, String> msgXML){
 			String hostuser = msgXML.get("hostuser");
 			if(Boolean.valueOf(msgXML.get("success"))){
-				rsFriendGet(msgXML.get("accounts"));
-				JOptionPane.showMessageDialog(null, hostuser + ":已经和你成为好友");
+				JOptionPane.showMessageDialog(null, hostuser + " 已经和你成为好友");
 			}else{
-				JOptionPane.showMessageDialog(null, hostuser + ":好友请求失败");
+				JOptionPane.showMessageDialog(null, "添加好友失败");
 			}
 		}
-
 		/**
 		 * 删除好友列表结果
 		 * @param msgXML
@@ -149,6 +184,16 @@ public class QQController implements Runnable{
 			rsFriendGet(msgXML.get("accounts"));
 		}
 
+		private synchronized void messageDeliver(Map<String, String> msgXML) {
+			String basename = msgXML.get("basename");
+			QQFileWrite writer = fileStreams.get(basename);
+			if(writer != null){
+				if(writer.write(msgXML)){
+					fileStreams.remove(basename);
+					JOptionPane.showMessageDialog(null, "文件传输完毕");
+				}
+			}
+		}
 		/**
 		 * 此方法是聊天的核心 将从服务器接收到的数据进行判断，如果双发聊天窗口都是打开的则直接传输数据到私聊窗口上;
 		 * 否则,存储数据到临时栈中，等待新开私聊窗口的时候更新数据
@@ -157,7 +202,7 @@ public class QQController implements Runnable{
 		 * @param aimuser
 		 * @param message
 		 */
-		private synchronized void messageGet(Map<String, String> msgXML) {
+		private synchronized void messageChat(Map<String, String> msgXML) {
 			String hostuser = msgXML.get("hostuser");
 			String message = msgXML.get("message");
 			// 对方发送数据
@@ -182,12 +227,7 @@ public class QQController implements Runnable{
 			
 			String attr = msgXML.get("attribute");
 			
-			String methodName = null;
-			
-			if(attr.equals(QQMessage.COMMAND) || attr.equals(QQMessage.RESULT))
-			{methodName = attr + QQTool.first2up(msgXML.get("name"));}
-			else
-			{methodName = "messageGet";}
+			String methodName = attr + QQTool.first2up(msgXML.get("name"));
 			
 			try {
 				Method method = getClass().getDeclaredMethod(methodName, Map.class);
@@ -254,5 +294,5 @@ public class QQController implements Runnable{
 			
 			return listCompany;
 		}
-		
+
 }

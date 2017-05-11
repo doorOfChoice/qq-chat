@@ -12,7 +12,7 @@ import java.sql.SQLException;
  * @version 1.0
  */
 
-public class QQCheck {
+public class QQVerify {
 	
 	public static boolean validUsername(String username){
 		return username.matches("[\\w]{6,16}");

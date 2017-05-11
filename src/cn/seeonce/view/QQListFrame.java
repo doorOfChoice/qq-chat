@@ -1,4 +1,4 @@
-package cn.seeonce.qq;
+package cn.seeonce.view;
 
 import java.awt.BorderLayout;
 import java.awt.MenuItem;
@@ -28,7 +28,7 @@ import javax.swing.JScrollPane;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.seeonce.controller.QQController;
+import cn.seeonce.controller.QQClient;
 import cn.seeonce.intface.QQListener;
 import cn.seeonce.model.QQMessage;
 import cn.seeonce.model.QQSql;
@@ -41,8 +41,8 @@ public class QQListFrame extends JFrame {
 	
 	private static final int HEIGHT = 600;
 	
-	private QQController controller;
-	
+	//聊天服务器控制器的引用
+	private QQClient controller;
 	// swing frame映射
 	private Map<String, QQChatFrame> friendsFrame;
 	// swing 好友列表
@@ -56,7 +56,7 @@ public class QQListFrame extends JFrame {
 	// swing 添加好友窗口
 	private JFrame addFriendFrame = null;
 
-	public QQListFrame(QQController controller) {
+	public QQListFrame(QQClient controller) {
 		this.controller = controller;
 		friendsFrame = new HashMap<String, QQChatFrame>();
 		// 注册组件
@@ -94,10 +94,12 @@ public class QQListFrame extends JFrame {
 						if (friendsFrame.get(aimuser) == null) {
 							QQChatFrame chatFrame = new QQChatFrame(controller.getAccount().getUsername(),
 									aimuser, controller.getOutput(), friendsFrame);
+							//将存储在临时内存中的消息放入聊天窗口
 							Stack<String> msg = controller.popMessage(aimuser);
 							while(!msg.isEmpty()){
 								chatFrame.showMessage(msg.pop());
 							}
+							//更新好友列表
 							QQListFrame.this.updateFriends(controller.getListMessage());
 							friendsFrame.put(aimuser, chatFrame);
 						}
@@ -166,5 +168,11 @@ public class QQListFrame extends JFrame {
 	
 	public synchronized QQChatFrame getChatFrame(String aimuser){
 		return friendsFrame.get(aimuser);
+	}
+	
+	public synchronized void startDeliver(String aimuser, String filename){
+		if(friendsFrame.get(aimuser) != null){
+			friendsFrame.get(aimuser).startDeliver(filename);
+		}
 	}
 }

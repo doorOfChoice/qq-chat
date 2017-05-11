@@ -4,5 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="/home/dawndevil/Downloads/mysql-connector-java-3.1.14/mysql-connector-java-3.1.14-bin.jar"/>
 	<classpathentry kind="lib" path="/home/dawndevil/Downloads/fastjson-1.2.31.jar"/>
+	<classpathentry kind="lib" path="/home/dawndevil/Downloads/commons-codec-1.10-bin.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

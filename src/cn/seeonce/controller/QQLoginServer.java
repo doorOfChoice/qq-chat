@@ -34,16 +34,14 @@ public class QQLoginServer implements Runnable{
 		}
 	}
 	
-	private synchronized void commandLogin(String message){
-		Map<String, String> msgXML = QQTool.analyseXML(message);
+	private synchronized void commandLogin(String message, Map<String, String> msgXML){
 		boolean success    = model.login(msgXML.get("username"), msgXML.get("password"));
 		String aimuser = msgXML.get("aimuser");	
 		sendMessage(output, QQMessage.rsLogin(aimuser, success, 
     	        success+"", success ? model.getUser(aimuser) : null));
 	}
 	
-	private synchronized void commandSign(String message){
-		Map<String, String> msgXML = QQTool.analyseXML(message);
+	private synchronized void commandSign(String message, Map<String, String> msgXML){
 		String hostuser = msgXML.get("aimuser");
 		String username = msgXML.get("username");
 		String password = msgXML.get("password");
@@ -78,14 +76,11 @@ public class QQLoginServer implements Runnable{
 				
 				String attr = msgXML.get("attribute");
 				
-				if(attr.equals(QQMessage.COMMAND) || attr.equals(QQMessage.RESULT))
-				{methodName = attr + QQTool.first2up(msgXML.get("name"));}
-				else
-				{methodName = "messageGet";}
+				methodName = attr + QQTool.first2up(msgXML.get("name"));
 				
 				try {
-					Method method = getClass().getDeclaredMethod(methodName, String.class);
-					method.invoke(this, message);
+					Method method = getClass().getDeclaredMethod(methodName, String.class, Map.class);
+					method.invoke(this, message, msgXML);
 				}catch(Exception ex){ex.printStackTrace();}
 				
 			}

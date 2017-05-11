@@ -1,4 +1,4 @@
-package cn.seeonce.qq;
+package cn.seeonce.view;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
@@ -29,7 +29,6 @@ public class QQAddFriendFrame extends JFrame{
 	public QQAddFriendFrame(String username, DataOutputStream output){
 		this.output   = output;
 		this.username = username;
-		
 		initAssembly();
 	}
 	
