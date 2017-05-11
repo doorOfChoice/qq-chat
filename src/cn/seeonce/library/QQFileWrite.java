@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
 
+import cn.seeonce.data.XMLObject;
+
 public class QQFileWrite {
 	private String filename;
 	
@@ -22,15 +24,15 @@ public class QQFileWrite {
 		}
 	}
 	
-	public synchronized boolean write(Map<String, String> msgXML){
+	public synchronized boolean write(XMLObject msgXML){
 		try{
-			if(Boolean.valueOf(msgXML.get("isEnd"))){
+			if(Boolean.valueOf(msgXML.getString("isEnd"))){
 				output.close();
 				return true;
 			}
 			//获取文件中真实的byte[]
 			byte[] realBuf = Base64.getDecoder()
-					               .decode(msgXML.get("message").getBytes());
+					               .decode(msgXML.getString("message").getBytes());
 			output.write(realBuf);
 		}catch(Exception ex){
 			ex.printStackTrace();

@@ -53,36 +53,8 @@ public class QQTool {
 		return sha1Code.toString();
 	}
 	
-	//获取匹配器
-	public static Matcher getMatcher(String pattern, String str){
-			Pattern pt = Pattern.compile(pattern);
-			Matcher match = pt.matcher(str);
-			
-			return match;
-		}
-		
-		//一般XML分析器
-	public static Map<String, String> analyseXML(String str){
-		System.out.println(str);
-		
-		if(!str.matches("<[\\w]+?(\\s+?[\\w]+?=\"([\\w\\W]*?)\")+/>"))
-				return null;
-			
-		Matcher match = getMatcher("([\\w]+?)=\"([\\w\\W]*?)\"", str);
-			
-		Map<String, String> keyValue = new HashMap<String, String>();
-			
-		String attribute = str.substring(1, str.indexOf(" "));
-			
-		keyValue.put("attribute", attribute);
-			
-		while(match.find()){
-			keyValue.put(match.group(1), URLDecoder.decode(match.group(2)));
-		}
-			
-		return keyValue;
-	}
 	
+		
 	public static String first2up(String str){
 		return Character.toUpperCase(str.charAt(0)) + str.substring(1);
 	}
@@ -101,8 +73,4 @@ public class QQTool {
 		return nBuf;
 	}
 	
-	public static void main(String[] args){
-		String aim = "ew  qewq\n";
-		System.out.println(analyseXML("<name aimuser=\"" +aim+ "\"/>").get("aimuser"));
-	}
 }

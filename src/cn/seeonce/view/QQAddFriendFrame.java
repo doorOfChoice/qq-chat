@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.DataOutputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import javax.swing.JButton;
@@ -20,13 +21,13 @@ public class QQAddFriendFrame extends JFrame{
 
 	private static final long serialVersionUID = 1L;
 	
-	private DataOutputStream output;
+	private ObjectOutputStream output;
 	private String           username;
 	
 	private JTextField       friendName;
 	private JButton          add;
 	
-	public QQAddFriendFrame(String username, DataOutputStream output){
+	public QQAddFriendFrame(String username, ObjectOutputStream output){
 		this.output   = output;
 		this.username = username;
 		initAssembly();
@@ -57,7 +58,7 @@ public class QQAddFriendFrame extends JFrame{
 			
 			try{
 				if(obj == add)
-				{output.writeUTF(QQMessage.cmFriendAdd(username, friendName.getText()));}
+				{output.writeObject(QQMessage.cmFriendAdd(username, friendName.getText()));}
 			}catch(Exception ex){ex.printStackTrace();}
 		}
 		

@@ -8,6 +8,8 @@ import java.awt.event.WindowEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -23,8 +25,10 @@ import javax.swing.JTextField;
 import com.alibaba.fastjson.JSON;
 
 import cn.seeonce.controller.ClientLocalController;
+import cn.seeonce.core.EntranceChatServer;
 import cn.seeonce.core.EntranceClient;
 import cn.seeonce.data.Account;
+import cn.seeonce.data.XMLObject;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
 import cn.seeonce.model.QQModel;
@@ -79,16 +83,22 @@ public class QQLoginFrame extends JFrame{
 		private void verifyAccount(String username, String password){
 			try {
 				Socket server = new Socket("localhost", 9998);
-				DataOutputStream output = new DataOutputStream(server.getOutputStream());
-				DataInputStream  input  = new DataInputStream(server.getInputStream());
+				ObjectOutputStream output = new ObjectOutputStream(server.getOutputStream());
+				ObjectInputStream  input  = new ObjectInputStream(server.getInputStream());
 				//发送登录请求
-				output.writeUTF(QQMessage.cmLogin(username, username, password));
+				output.writeObject(QQMessage.cmLogin(username, username, password));
 				//接受服务器响应
-				String str = input.readUTF();
-				Map<String, String> msgXML = QQTool.analyseXML(str);
-				if(Boolean.valueOf(msgXML.get("success"))){
-					Account user  = JSON.parseObject(msgXML.get("account"),Account.class);
-					Socket client = new Socket("localhost", 9999);
+				
+				XMLObject msgXML = null;
+				try {
+					msgXML = (XMLObject)input.readObject();
+					System.out.println(msgXML);
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				}
+				if(Boolean.valueOf(msgXML.getString("success"))){
+					Account user  = (Account)msgXML.get("account");
+					Socket client = new Socket("localhost", EntranceChatServer.PORT);
 					EntranceClient.newClient(client, user);
 					setVisible(false);
 					return;

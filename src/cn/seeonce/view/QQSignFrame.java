@@ -5,6 +5,8 @@ import java.awt.event.ActionListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.Connection;
@@ -21,6 +23,7 @@ import javax.swing.JTextField;
 import com.alibaba.fastjson.JSON;
 
 import cn.seeonce.data.Account;
+import cn.seeonce.data.XMLObject;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
 import cn.seeonce.model.QQModel;
@@ -72,17 +75,15 @@ public class QQSignFrame extends JFrame{
 			try {
 				server = new Socket("localhost", 9998);
 				
-				DataOutputStream output = new DataOutputStream(server.getOutputStream());
-				DataInputStream  input  = new DataInputStream(server.getInputStream());
+				ObjectOutputStream output = new ObjectOutputStream(server.getOutputStream());
+				ObjectInputStream  input  = new ObjectInputStream(server.getInputStream());
 				//发送登录请求
-				output.writeUTF(QQMessage.cmSign(username, username, password));
+				output.writeObject(QQMessage.cmSign(username, username, password));
 				//接受服务器响应
-				String str = input.readUTF();
-				System.out.println(str);
-				Map<String, String> msgXML = QQTool.analyseXML(str);
+				XMLObject msgXML = (XMLObject)input.readObject();
 				//显示服务器返回的信息
 				JOptionPane.showMessageDialog(null, msgXML.get("message"));
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}

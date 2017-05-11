@@ -20,17 +20,17 @@ public class QQMessage {
 	public final static String DELETE_FRIEND = "friendDelete";
 	
 	
-	public static String msgChat(String hostuser, String aimuser, String message){
+	public static XMLObject msgChat(String hostuser, String aimuser, String message){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(MESSAGE);
 		xml.add("name", CHAT);
 		xml.add("hostuser", hostuser);
 		xml.add("aimuser", aimuser);
 		xml.add("message", message);
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String msgFile(String aimuser,String basename, String message, boolean isEnd){
+	public static XMLObject msgFile(String aimuser,String basename, String message, boolean isEnd){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(MESSAGE);
 		xml.add("name", DELIVER);
@@ -38,20 +38,20 @@ public class QQMessage {
 		xml.add("basename", basename);
 		xml.add("aimuser", aimuser);
 		xml.add("message", message);
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String cmDeliver(String hostuser, String aimuser, String filename){
+	public static XMLObject cmDeliver(String hostuser, String aimuser, String filename){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(COMMAND);
 		xml.add("name", DELIVER);
 		xml.add("aimuser", aimuser);
 		xml.add("hostuser", hostuser);
 		xml.add("filename", filename);
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String cmLogin(String aimuser, String username, String password){
+	public static XMLObject cmLogin(String aimuser, String username, String password){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(COMMAND);
 		xml.add("name", LOGIN);
@@ -59,10 +59,10 @@ public class QQMessage {
 		xml.add("password", password);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String cmSign(String aimuser, String username, String password){
+	public static XMLObject cmSign(String aimuser, String username, String password){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(COMMAND);
 		xml.add("name", SIGN);
@@ -70,63 +70,63 @@ public class QQMessage {
 		xml.add("password", password);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String cmFriendGet(String aimuser){
+	public static XMLObject cmFriendGet(String aimuser){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(COMMAND);
 		xml.add("name", GET_FRIENDS);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String cmFriendAdd(String hostuser, String aimuser){
+	public static XMLObject cmFriendAdd(String hostuser, String aimuser){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(COMMAND);
 		xml.add("name", ADD_FRIEND);
 		xml.add("hostuser", hostuser);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String cmFriendDelete(String hostuser, String aimuser){
+	public static XMLObject cmFriendDelete(String hostuser, String aimuser){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(COMMAND);
 		xml.add("name", DELETE_FRIEND);
 		xml.add("hostuser", hostuser);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
 	
 	
-	public static String rsFriendGet(String aimuser, ArrayList<Account> accounts){
+	public static XMLObject rsFriendGet(String aimuser, ArrayList<Account> accounts){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(RESULT);
 		xml.add("name", GET_FRIENDS);
-		xml.add("accounts", JSON.toJSONString(accounts));
+		xml.add("accounts", accounts);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 
-	public static String rsLogin(String aimuser, boolean canLogin
+	public static XMLObject rsLogin(String aimuser, boolean canLogin
 			, String message, Account account){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(RESULT);
 		xml.add("name", LOGIN);
 		xml.add("success", canLogin + "");
-		xml.add("account", JSON.toJSONString(account));
+		xml.add("account", account);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String rsSign(String aimuser, boolean success
+	public static XMLObject rsSign(String aimuser, boolean success
 			, String message){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(RESULT);
@@ -135,10 +135,10 @@ public class QQMessage {
 		xml.add("success", success + "");
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String rsDeliver(String hostuser, String aimuser, boolean success, String filename){
+	public static XMLObject rsDeliver(String hostuser, String aimuser, boolean success, String filename){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(RESULT);
 		xml.add("name", DELIVER);
@@ -147,10 +147,10 @@ public class QQMessage {
 		xml.add("hostuser", hostuser);
 		xml.add("aimuser", aimuser);
 		
-		return xml.toString();
+		return xml;
 	}
 	
-	public static String rsFriendAdd(String hostuser, String aimuser
+	public static XMLObject rsFriendAdd(String hostuser, String aimuser
 			, boolean success, ArrayList<Account> friends){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(RESULT);
@@ -158,19 +158,19 @@ public class QQMessage {
 		xml.add("success", success + "");
 		xml.add("aimuser", aimuser);
 		xml.add("hostuser", hostuser);
-		xml.add("accounts", JSON.toJSONString(friends));
-		return xml.toString();
+		xml.add("accounts", friends);
+		return xml;
 	}
 	
-	public static String rsFriendDelete(String hostuser, String aimuser
+	public static XMLObject rsFriendDelete(String hostuser, String aimuser
 			, ArrayList<Account> friends){
 		XMLObject xml = new XMLObject();
 		xml.setAttribute(RESULT);
 		xml.add("name", DELETE_FRIEND);
 		xml.add("aimuser", aimuser);
 		xml.add("hostuser", hostuser);
-		xml.add("accounts", JSON.toJSONString(friends));
-		return xml.toString();
+		xml.add("accounts", friends);
+		return xml;
 	}
 
 }

@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -25,12 +26,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import java.awt.event.WindowAdapter;
 
+import cn.seeonce.data.XMLObject;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
 
 public class QQChatFrame extends JFrame{
 	
-	private DataOutputStream output;
+	private ObjectOutputStream output;
 	private String           hostuser;
 	private String           aimuser ;
 	//朋友-》窗口映射, 放在这里是因为要在退出时删除自己
@@ -43,7 +45,7 @@ public class QQChatFrame extends JFrame{
 	private JFileChooser     chooser;
 	private Executor         pool;
 	public QQChatFrame(String hostuser, String aimuser, 
-			DataOutputStream output, Map<String, QQChatFrame> friendsFrame){
+			ObjectOutputStream output, Map<String, QQChatFrame> friendsFrame){
 		this.output       = output;
 		this.aimuser      = aimuser;
 		this.hostuser     = hostuser;
@@ -105,9 +107,9 @@ public class QQChatFrame extends JFrame{
 		pool.execute(new FileDeliver(filename));
 	}
 	
-	private synchronized void sendMessage(String message){
+	private synchronized void sendMessage(XMLObject obj){
 		try {
-			output.writeUTF(message);
+			output.writeObject(obj);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -122,7 +124,7 @@ public class QQChatFrame extends JFrame{
 			try {
 				if(obj == send){
 					String message = hostuser + " said:)\n" + sendpanel.getText() + "\n";
-					output.writeUTF(QQMessage.msgChat(hostuser, aimuser, message));
+					output.writeObject(QQMessage.msgChat(hostuser, aimuser, message));
 					showpanel.setText(showpanel.getText() + message);
 				}else if(obj == delivery){
 					chooser.showOpenDialog(null);

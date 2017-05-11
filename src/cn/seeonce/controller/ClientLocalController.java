@@ -5,18 +5,22 @@ import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.JOptionPane;
 
 import com.alibaba.fastjson.JSON;
 
 import cn.seeonce.data.Account;
+import cn.seeonce.data.XMLObject;
 import cn.seeonce.intface.QQListener;
 import cn.seeonce.library.QQFileWrite;
 import cn.seeonce.library.QQMessage;
@@ -43,22 +47,20 @@ public class ClientLocalController{
 		// 所有等待接受的文件流
 		private Map<String, QQFileWrite> fileStreams;
 		// 向服务器的接收流
-		private DataInputStream input = null;
+		private ObjectInputStream input = null;
 		// 向服务器的输出流
-		private DataOutputStream output = null;
-		// 监听任务
-		private Thread task;
+		private ObjectOutputStream output = null;
 		
 		private QQListFrame friendList;
 		
 		public ClientLocalController(Account account, Socket client,
-				 DataInputStream input, DataOutputStream output){
+				 ObjectInputStream input, ObjectOutputStream output){
 			this.account = account;
 			this.client  = client;
 			this.input   = input;
 			this.output  = output;
-			dataMessage = new HashMap<String, Stack<String>>();
-			fileStreams = new HashMap<String, QQFileWrite>();
+			dataMessage = new ConcurrentHashMap<String, Stack<String>>();
+			fileStreams = new ConcurrentHashMap<String, QQFileWrite>();
 			try {
 				// 向服务器注册key-value，提示已经上线
 				output.writeUTF(account.getUsername());
@@ -74,9 +76,9 @@ public class ClientLocalController{
 		 * 向服务器发送信息
 		 * @param message
 		 */
-		private void sendMessage(String message){
+		private void sendMessage(XMLObject msgXML){
 			try {
-				output.writeUTF(message);
+				output.writeObject(msgXML);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -86,10 +88,8 @@ public class ClientLocalController{
 		 * 将服务器返还的json用户列表，解析成ArrayList，并且告知View层更新数据
 		 * @param accounts
 		 */
-		private synchronized void rsFriendGet(String accounts) {
-			dataFriends = (ArrayList<Account>) JSON.parseArray(accounts,
-					Account.class);
-			
+		private synchronized void rsFriendGet(ArrayList<Account> accounts) {
+			dataFriends = accounts;
 			friendList.updateFriends(getListMessage());
 		}
 
@@ -101,31 +101,31 @@ public class ClientLocalController{
 		 * @param msgXML
 		 * @throws IOException
 		 */
-		public synchronized void commandFriendAdd(Map<String, String> msgXML)
+		public synchronized void commandFriendAdd(XMLObject msgXML)
 				throws IOException {
-			String hostuser = msgXML.get("hostuser");
-			String aimuser = msgXML.get("aimuser");
+			String hostuser = msgXML.getString("hostuser");
+			String aimuser = msgXML.getString("aimuser");
 			String request = hostuser + "想添加你为好友";
 			int select = JOptionPane.showConfirmDialog(null, request, "好友添加",
 					JOptionPane.YES_NO_OPTION);
 			switch (select) {
 			// 同意添加, 则添加双方到数据库, 并且通知另外的朋友更新好友列表
 			case JOptionPane.YES_OPTION:
-				output.writeUTF(QQMessage.rsFriendAdd(hostuser, aimuser, true,
+				output.writeObject(QQMessage.rsFriendAdd(hostuser, aimuser, true,
 						null));
 				break;
 			// 拒绝添加
 			case JOptionPane.NO_OPTION:
-				output.writeUTF(QQMessage.rsFriendAdd(hostuser, aimuser, false,
+				output.writeObject(QQMessage.rsFriendAdd(hostuser, aimuser, false,
 						null));
 			}
 		}
 		
-		public synchronized void commandDeliver(Map<String, String> msgXML)
+		public synchronized void commandDeliver(XMLObject msgXML)
 				throws IOException {
-			String hostuser = msgXML.get("hostuser");
-			String aimuser  = msgXML.get("aimuser");
-			String basename = QQTool.basename(msgXML.get("filename")); 
+			String hostuser = msgXML.getString("hostuser");
+			String aimuser  = msgXML.getString("aimuser");
+			String basename = QQTool.basename(msgXML.getString("filename")); 
 			String request = hostuser + " 想传输文件 " + basename + "给你";
 			
 			int select = JOptionPane.showConfirmDialog(null, request, "文件传输",
@@ -135,7 +135,7 @@ public class ClientLocalController{
 				QQFileWrite writer = new QQFileWrite(basename);
 				fileStreams.put(basename, writer);
 				sendMessage(QQMessage.rsDeliver(aimuser, hostuser, 
-						true, msgXML.get("filename")));
+						true, msgXML.getString("filename")));
 				return ;
 			}
 			sendMessage(QQMessage.rsDeliver(aimuser, hostuser, 
@@ -146,21 +146,23 @@ public class ClientLocalController{
 		 * 服务器告知朋友是否添加成功, 成功的话更新好友列表
 		 * @param msgXML
 		 */
-		public synchronized void resultDeliver(Map<String, String> msgXML) {
-			String hostuser = msgXML.get("hostuser");
+		public synchronized void resultDeliver(XMLObject msgXML) {
+			String hostuser = msgXML.getString("hostuser");
 			
-			if(Boolean.valueOf(msgXML.get("success"))){
-				friendList.startDeliver(hostuser, msgXML.get("filename"));
+			if(Boolean.valueOf(msgXML.getString("success"))){
+				friendList.startDeliver(hostuser, msgXML.getString("filename"));
 				return;
 			}
 			
 			JOptionPane.showMessageDialog(null, hostuser + " 拒绝了你的传输请求");
 		}
 		
-		public synchronized void resultFriendAdd(Map<String, String> msgXML){
-			String hostuser = msgXML.get("hostuser");
-			if(Boolean.valueOf(msgXML.get("success"))){
+		public synchronized void resultFriendAdd(XMLObject msgXML){
+			String hostuser = msgXML.getString("hostuser");
+			if(Boolean.valueOf(msgXML.getString("success"))){
 				JOptionPane.showMessageDialog(null, hostuser + " 已经和你成为好友");
+				System.out.println(msgXML.get("accounts"));
+				rsFriendGet((ArrayList<Account>)msgXML.get("accounts"));
 			}else{
 				JOptionPane.showMessageDialog(null, "添加好友失败");
 			}
@@ -169,8 +171,8 @@ public class ClientLocalController{
 		 * 删除好友列表结果
 		 * @param msgXML
 		 */
-		public synchronized void resultFriendDelete(Map<String, String> msgXML) {
-			rsFriendGet(msgXML.get("accounts"));
+		public synchronized void resultFriendDelete(XMLObject msgXML) {
+			rsFriendGet((ArrayList<Account>)msgXML.get("accounts"));
 			JOptionPane.showMessageDialog(null, msgXML.get("hostuser")
 					+ " 从好友列表删除了你");
 		}
@@ -178,12 +180,12 @@ public class ClientLocalController{
 		 * 服务器返还的最新的好友列表
 		 * @param msgXML
 		 */
-		public synchronized void resultFriendGet(Map<String, String> msgXML) {
-			rsFriendGet(msgXML.get("accounts"));
+		public synchronized void resultFriendGet(XMLObject msgXML) {
+			rsFriendGet((ArrayList<Account>)msgXML.get("accounts"));
 		}
 
-		public synchronized void messageDeliver(Map<String, String> msgXML) {
-			String basename = msgXML.get("basename");
+		public synchronized void messageDeliver(XMLObject msgXML) {
+			String basename = msgXML.getString("basename");
 			QQFileWrite writer = fileStreams.get(basename);
 			if(writer != null){
 				if(writer.write(msgXML)){
@@ -200,9 +202,9 @@ public class ClientLocalController{
 		 * @param aimuser
 		 * @param message
 		 */
-		public synchronized void messageChat(Map<String, String> msgXML) {
-			String hostuser = msgXML.get("hostuser");
-			String message = msgXML.get("message");
+		public synchronized void messageChat(XMLObject msgXML) {
+			String hostuser = msgXML.getString("hostuser");
+			String message = msgXML.getString("message");
 			// 对方发送数据
 			Stack<String> msgs = dataMessage.get(hostuser);
 			
@@ -234,7 +236,7 @@ public class ClientLocalController{
 			return account;
 		}
 		//获取当前输出流
-		public synchronized DataOutputStream getOutput(){
+		public synchronized ObjectOutputStream getOutput(){
 			return output;
 		}
 		//获取指定下标下的好友

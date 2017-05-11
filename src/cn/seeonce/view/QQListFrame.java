@@ -30,6 +30,7 @@ import com.alibaba.fastjson.JSON;
 
 import cn.seeonce.controller.ClientLocalController;
 import cn.seeonce.data.Account;
+import cn.seeonce.data.XMLObject;
 import cn.seeonce.intface.QQListener;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
@@ -137,9 +138,9 @@ public class QQListFrame extends JFrame {
 					frienduser));
 		}
 		
-		private synchronized void sendMessage(String message){
+		private synchronized void sendMessage(XMLObject msgXML){
 			try {
-				controller.getOutput().writeUTF(message);
+				controller.getOutput().writeObject(msgXML);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

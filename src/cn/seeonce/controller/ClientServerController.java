@@ -3,6 +3,8 @@ package cn.seeonce.controller;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import cn.seeonce.data.XMLObject;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
 import cn.seeonce.model.QQModel;
@@ -25,9 +28,9 @@ public class ClientServerController implements Runnable{
 		
 		private String           identity; 
 		
-		private DataInputStream  input ;
+		private ObjectInputStream  input ;
 		
-		private DataOutputStream output;
+		private ObjectOutputStream output;
 		
 		private boolean          isInterrupt;
 		
@@ -35,8 +38,8 @@ public class ClientServerController implements Runnable{
 			this.model = new QQModel();
 			this.clients = clients;
 			try {
-				input = new DataInputStream(client.getInputStream());
-				output = new DataOutputStream(client.getOutputStream());
+				output = new ObjectOutputStream(client.getOutputStream());
+				input = new ObjectInputStream(client.getInputStream());
 				//在map中创建可管理的映射
 				identity = input.readUTF();
 			} catch (IOException e) {
@@ -58,9 +61,9 @@ public class ClientServerController implements Runnable{
 		}
 		
 		/*向客户端发送信息*/
-		public void sendMessage(String message){
+		public void sendMessage(XMLObject msgXML){
 			try {
-				output.writeUTF(message);
+				output.writeObject(msgXML);
 			} catch (IOException e)
 			{e.printStackTrace();}
 		}
@@ -71,21 +74,22 @@ public class ClientServerController implements Runnable{
 		 * @param message
 		 * @param msgXML
 		 */
-		public synchronized void shiftDirect(String message, Map<String, String> msgXML){
-			String aimuser = msgXML.get("aimuser");
+		public synchronized void shiftDirect(XMLObject msgXML){
+			String aimuser = msgXML.getString("aimuser");
 			if(userOnline(aimuser))
-				clients.get(msgXML.get("aimuser")).sendMessage(message);
+				clients.get(msgXML.getString("aimuser")).sendMessage(msgXML);
 		}
 		
-		public synchronized void commandFriendGet(String message, Map<String, String> msgXML){
-			String aimuser = msgXML.get("aimuser");
-			clients.get(aimuser).sendMessage(QQMessage
-					   .rsFriendGet(aimuser, model.getFriends(aimuser)));
+		public synchronized void commandFriendGet(XMLObject msgXML){
+			String aimuser = msgXML.getString("aimuser");
+			if(userOnline(aimuser))
+				getUser(aimuser).sendMessage(QQMessage
+				.rsFriendGet(aimuser, model.getFriends(aimuser)));
 		}
 		
-		public synchronized void commandFriendDelete(String message, Map<String, String> msgXML){
-			String hostuser = msgXML.get("hostuser");
-			String aimuser  = msgXML.get("aimuser") ;
+		public synchronized void commandFriendDelete(XMLObject msgXML){
+			String hostuser = msgXML.getString("hostuser");
+			String aimuser  = msgXML.getString("aimuser") ;
 			if(model.removeFriend(hostuser, aimuser)){
 				if(userOnline(hostuser))
 				{getUser(hostuser).sendMessage(QQMessage
@@ -96,48 +100,46 @@ public class ClientServerController implements Runnable{
 					   .rsFriendDelete(hostuser, aimuser, model.getFriends(aimuser)));}
 			}
 		}
-		public synchronized void resultFriendAdd(String message, Map<String, String> msgXML){
+		public synchronized void resultFriendAdd(XMLObject msgXML){
 			boolean success = false;
-			String hostuser = msgXML.get("hostuser");
-			String aimuser  = msgXML.get("aimuser") ;
-			if(Boolean.valueOf(msgXML.get("success"))){
+			String hostuser = msgXML.getString("hostuser");
+			String aimuser  = msgXML.getString("aimuser") ;
+			if(Boolean.valueOf(msgXML.getString("success"))){
 				success = model.addFriend(hostuser, aimuser);
 			}
 			if(userOnline(hostuser))
-				getUser("hostuser")
+				getUser(hostuser)
 				.sendMessage(QQMessage.rsFriendAdd(aimuser, hostuser, success, model.getFriends(hostuser)));
 			if(userOnline(aimuser))
-				getUser("aimuser")
+				getUser(aimuser)
 				.sendMessage(QQMessage.rsFriendAdd(hostuser, aimuser, success, model.getFriends(aimuser)));
 		
 		}
 		
-		public synchronized void messageChat(String message, Map<String, String> msgXML){
-			String aimuser = msgXML.get("aimuser");
-			
-			if(userOnline(aimuser))
-			{getUser(aimuser).sendMessage(message);}
-		}
 		
 		@Override
 		public void run() {
 			while(!isInterrupt){
 				try {
-					String message = input.readUTF();
 					
-					Map<String, String> msgXML = QQTool.analyseXML(message);
+					XMLObject msgXML = null;
+					try {
+						msgXML = (XMLObject)input.readObject();
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					}
 					
-					String attr = msgXML.get("attribute");
+					String attr = msgXML.getAttribute();
 					
 					String methodName = null;
 					
-					methodName = attr + QQTool.first2up(msgXML.get("name"));
-					
+					methodName = attr + QQTool.first2up(msgXML.getString("name"));
+					System.out.println(methodName);
 					try {
-						Method method = getClass().getDeclaredMethod(methodName, String.class, Map.class);
-						method.invoke(this, message, msgXML);
+						Method method = getClass().getDeclaredMethod(methodName, XMLObject.class);
+						method.invoke(this, msgXML);
 					}catch(Exception ex){
-						shiftDirect(message, msgXML);
+						shiftDirect(msgXML);
 					}
 					/*
 					 * 客户端异常退出

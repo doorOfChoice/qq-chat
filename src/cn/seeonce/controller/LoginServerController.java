@@ -3,11 +3,13 @@ package cn.seeonce.controller;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
 
+import cn.seeonce.data.XMLObject;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
 import cn.seeonce.model.QQModel;
@@ -15,36 +17,36 @@ import cn.seeonce.model.QQModel;
 public class LoginServerController{
 	private QQModel model;
 	
-	private DataOutputStream output;
+	private ObjectOutputStream output;
 	
-	public LoginServerController(DataOutputStream output) throws IOException{
+	public LoginServerController(ObjectOutputStream output) throws IOException{
 		this.model  = new QQModel();
 		this.output = output;
 	}
 	
-	public synchronized void setDataOutputStream(DataOutputStream output){
+	public synchronized void setDataOutputStream(ObjectOutputStream output){
 		this.output = output;
 	}
 	
-	private void sendMessage(DataOutputStream output, String message){
+	private void sendMessage(XMLObject message){
 		try {
-			output.writeUTF(message);
+			output.writeObject(message);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public synchronized void commandLogin(String message, Map<String, String> msgXML){
-		boolean success    = model.login(msgXML.get("username"), msgXML.get("password"));
-		String aimuser = msgXML.get("aimuser");	
-		sendMessage(output, QQMessage.rsLogin(aimuser, success, 
-    	        success+"", success ? model.getUser(aimuser) : null));
+	public synchronized void commandLogin(XMLObject msgXML){
+		boolean success    = model.login(msgXML.getString("username"), msgXML.getString("password"));
+		String aimuser = msgXML.getString("aimuser");	
+		sendMessage(QQMessage.rsLogin(aimuser, success, 
+    	        success + "", success ? model.getUser(aimuser) : null));
 	}
 	
-	public synchronized void commandSign(String message, Map<String, String> msgXML){
-		String hostuser = msgXML.get("aimuser");
-		String username = msgXML.get("username");
-		String password = msgXML.get("password");
+	public synchronized void commandSign(XMLObject msgXML){
+		String hostuser = msgXML.getString("aimuser");
+		String username = msgXML.getString("username");
+		String password = msgXML.getString("password");
 		int success = model.sign(username, password);
 		
 		String resultMessage = null;
@@ -55,7 +57,7 @@ public class LoginServerController{
 		case QQModel.UNVALID_PASSWORD : resultMessage = "密码格式不对"; break;
 		}
 		
-		sendMessage(output, 
+		sendMessage(
 		QQMessage.rsSign(hostuser, success == QQModel.SUCCESS, resultMessage));
 	}
 	

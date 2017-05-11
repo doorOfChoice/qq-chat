@@ -1,6 +1,8 @@
 package cn.seeonce.core;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
@@ -23,7 +25,7 @@ public class EntranceChatServer {
 		//sql model
 		private QQModel model ;
 		
-		private final static int PORT = 9999;
+		public final static int PORT = 9999;
 		
 		private EntranceChatServer() throws IOException{
 			this.model = new QQModel();
