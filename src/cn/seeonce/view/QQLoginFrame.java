@@ -25,10 +25,10 @@ import javax.swing.JTextField;
 import com.alibaba.fastjson.JSON;
 
 import cn.seeonce.controller.ClientLocalController;
-import cn.seeonce.core.EntranceChatServer;
-import cn.seeonce.core.EntranceClient;
 import cn.seeonce.data.Account;
 import cn.seeonce.data.XMLObject;
+import cn.seeonce.entrance.EntranceChatServer;
+import cn.seeonce.entrance.EntranceClient;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
 import cn.seeonce.model.QQModel;

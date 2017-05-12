@@ -52,14 +52,6 @@ public class ClientServerController implements Runnable{
 			return identity;
 		}
 		
-		public ClientServerController getUser(String username){
-			return clients.get(username);
-		}
-		
-		public boolean userOnline(String username){
-			return clients.get(username) != null;
-		}
-		
 		/*向客户端发送信息*/
 		public void sendMessage(XMLObject msgXML){
 			try {
@@ -78,6 +70,23 @@ public class ClientServerController implements Runnable{
 			String aimuser = msgXML.getString("aimuser");
 			if(userOnline(aimuser))
 				clients.get(msgXML.getString("aimuser")).sendMessage(msgXML);
+		}
+		
+		public synchronized void messageChat(XMLObject msgXML){
+			String hostuser = msgXML.getString("hostuser");
+			String aimuser = msgXML.getString("aimuser");
+			
+			if(userOnline(aimuser)){
+				clients.get(msgXML.getString("aimuser")).sendMessage(msgXML);
+			}
+			else{
+				model.writeMessage(hostuser, aimuser, msgXML.getString("message"));
+			}
+		}
+		
+		public synchronized void commandLeave(XMLObject msgXML){
+			String aimuser = msgXML.getString("aimuser");
+			sendMessage(QQMessage.rsLeave(aimuser, model.getMessage(aimuser)));
 		}
 		
 		public synchronized void commandFriendGet(XMLObject msgXML){
@@ -151,6 +160,12 @@ public class ClientServerController implements Runnable{
 					System.out.println(identity + ":客户端已经退出");
 				}
 			}
+		}
+		private boolean userOnline(String username){
+			return clients.get(username) != null;
+		}
+		private ClientServerController getUser(String username){
+			return clients.get(username);
 		}
 		
 

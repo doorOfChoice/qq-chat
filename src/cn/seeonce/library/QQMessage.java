@@ -1,6 +1,8 @@
 package cn.seeonce.library;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Stack;
 
 import cn.seeonce.data.Account;
 import cn.seeonce.data.XMLObject;
@@ -13,6 +15,7 @@ public class QQMessage {
 	
 	public final static String CHAT          = "chat";
 	public final static String SIGN          = "sign" ;
+	public final static String LEAVE         = "leave";
 	public final static String LOGIN         = "login";
 	public final static String DELIVER       = "deliver";
 	public final static String ADD_FRIEND    = "friendAdd";
@@ -48,6 +51,14 @@ public class QQMessage {
 		xml.add("aimuser", aimuser);
 		xml.add("hostuser", hostuser);
 		xml.add("filename", filename);
+		return xml;
+	}
+	
+	public static XMLObject cmLeave(String aimuser){
+		XMLObject xml = new XMLObject();
+		xml.setAttribute(COMMAND);
+		xml.add("name", LEAVE);
+		xml.add("aimuser", aimuser);
 		return xml;
 	}
 	
@@ -135,6 +146,15 @@ public class QQMessage {
 		xml.add("success", success + "");
 		xml.add("aimuser", aimuser);
 		
+		return xml;
+	}
+	
+	public static XMLObject rsLeave(String aimuser, Map<String, Stack<String>> messages){
+		XMLObject xml = new XMLObject();
+		xml.setAttribute(RESULT);
+		xml.add("name", LEAVE);
+		xml.add("aimuser", aimuser);
+		xml.add("messages", messages);
 		return xml;
 	}
 	

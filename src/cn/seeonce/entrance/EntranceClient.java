@@ -1,4 +1,4 @@
-package cn.seeonce.core;
+package cn.seeonce.entrance;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -32,7 +32,6 @@ public class EntranceClient implements Runnable{
 		try {
 			input      = new ObjectInputStream(client.getInputStream());
 			output     = new ObjectOutputStream(client.getOutputStream());
-			System.out.println(account);
 			controller = new ClientLocalController(account, client, input, output);
 			task       = new Thread(this);
 		} catch (Exception e) {

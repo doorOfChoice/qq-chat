@@ -1,7 +1,7 @@
 package cn.seeonce.runner;
 
-import cn.seeonce.core.EntranceChatServer;
-import cn.seeonce.core.EntranceLoginServer;
+import cn.seeonce.entrance.EntranceChatServer;
+import cn.seeonce.entrance.EntranceLoginServer;
 
 public class ServerRunner {
 

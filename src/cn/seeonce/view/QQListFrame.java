@@ -31,7 +31,6 @@ import com.alibaba.fastjson.JSON;
 import cn.seeonce.controller.ClientLocalController;
 import cn.seeonce.data.Account;
 import cn.seeonce.data.XMLObject;
-import cn.seeonce.intface.QQListener;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
 import cn.seeonce.model.QQModel;

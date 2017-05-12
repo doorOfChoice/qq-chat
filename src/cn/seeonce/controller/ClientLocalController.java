@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSON;
 
 import cn.seeonce.data.Account;
 import cn.seeonce.data.XMLObject;
-import cn.seeonce.intface.QQListener;
 import cn.seeonce.library.QQFileWrite;
 import cn.seeonce.library.QQMessage;
 import cn.seeonce.library.QQTool;
@@ -71,6 +70,8 @@ public class ClientLocalController{
 			
 			// 获取好友列表
 			sendMessage(QQMessage.cmFriendGet(account.getUsername()));
+			// 获取离线消息
+			sendMessage(QQMessage.cmLeave(account.getUsername()));
 		}
 		/**
 		 * 向服务器发送信息
@@ -155,6 +156,11 @@ public class ClientLocalController{
 			}
 			
 			JOptionPane.showMessageDialog(null, hostuser + " 拒绝了你的传输请求");
+		}
+		
+		public synchronized void resultLeave(XMLObject msgXML) {
+			dataMessage = (Map<String, Stack<String>>)msgXML.get("messages");
+			rsFriendGet(dataFriends);
 		}
 		
 		public synchronized void resultFriendAdd(XMLObject msgXML){

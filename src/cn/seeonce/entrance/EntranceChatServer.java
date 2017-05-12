@@ -1,4 +1,4 @@
-package cn.seeonce.core;
+package cn.seeonce.entrance;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

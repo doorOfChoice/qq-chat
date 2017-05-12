@@ -6,9 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
-import javax.swing.JOptionPane;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 import cn.seeonce.data.Account;
 import cn.seeonce.library.QQTool;
 import cn.seeonce.library.QQVerify;
@@ -47,7 +47,12 @@ public class QQModel {
 	public Connection getConnection(){
 		return connect;
 	}
-	
+	/**
+	 * 注册函数
+	 * @param username
+	 * @param password
+	 * @return
+	 */
 	public synchronized int sign(String username, String password){
 				//创建临时用户
 		Account account = new 
@@ -80,7 +85,12 @@ public class QQModel {
 		
 		return SUCCESS;
 	}
-	
+	/**
+	 * 验证登录的函数
+	 * @param username
+	 * @param password
+	 * @return
+	 */
 	public synchronized  boolean login(String username, String password){
 		System.out.println(username);
 		if(!QQVerify.validUsername(username))
@@ -123,7 +133,12 @@ public class QQModel {
 		
 		return account;
 	}
-	
+	/**
+	 * 互相添加对方为好友
+	 * @param hostname
+	 * @param friendname
+	 * @return
+	 */
 	public synchronized boolean addFriend(String hostname, String friendname){
 		if(accountExist(friendname)){
 			String sql = "INSERT INTO qq_friends(hostuser,frienduser) VALUES(?,?),(?,?)";
@@ -148,7 +163,11 @@ public class QQModel {
 		
 		return false;
 	}
-	
+	/**
+	 * 获取自己的好友列表
+	 * @param hostname
+	 * @return ArrayList<Account>
+	 */
 	public synchronized  ArrayList<Account> getFriends(String hostname){
 		String sql = "SELECT * FROM qq_user WHERE username IN " +
 				"(SELECT frienduser FROM qq_friends WHERE hostuser=?)";
@@ -174,6 +193,12 @@ public class QQModel {
 		
 	}
 	
+	/**
+	 * 从双发联系人列表中删除好友
+	 * @param hostuser
+	 * @param frienduser
+	 * @return
+	 */
 	public synchronized boolean removeFriend(String hostuser, String frienduser){
 		String sql = "DELETE FROM qq_friends WHERE (hostuser=? AND "
 				   + "frienduser=?) OR (hostuser=?" + " AND " + "frienduser=?)";
@@ -202,7 +227,6 @@ public class QQModel {
 	 * @param password
 	 * @return 是否成功登录
 	 */
-	@SuppressWarnings("finally")
 	public synchronized boolean validAccountMessage(String username, String password){
 		String sql = "SELECT * FROM qq_user WHERE username=? AND password=?";
 		
@@ -224,6 +248,63 @@ public class QQModel {
 		
 		return isExist;
 		
+	}
+	/**
+	 * 将离线消息写入数据库中
+	 * @param from
+	 * @param to
+	 * @param content
+	 * @return
+	 */
+	public synchronized boolean writeMessage(String from, String to, String content){
+		String sql = "INSERT INTO qq_record(`from`, `to`, `content`, `datetime`) VALUES(" +
+				"?, ?, ?, ?)";
+		int effects = 0;
+		try {
+			PreparedStatement pstate = connect.prepareStatement(sql);
+			pstate.setString(1, from);
+			pstate.setString(2, to);
+			pstate.setString(3, content);
+			pstate.setInt(4, (int) (System.currentTimeMillis() / 1000));
+			
+			effects = pstate.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return effects != 0;
+	}
+	
+	/**
+	 * 获取好友发送给自己的信息, 并且分组存储, 返回数据 
+	 * @param hostname
+	 * @return
+	 */
+	public synchronized Map<String, Stack<String>> getMessage(String username){
+		String sql = "SELECT * FROM qq_record WHERE `to`=? ORDER BY datetime ASC";
+		Map<String, Stack<String>> messages = 
+					new HashMap<String, Stack<String>>();
+		try {
+			PreparedStatement pstate = connect.prepareStatement(sql);
+			pstate.setString(1, username);
+			
+			ResultSet set = pstate.executeQuery();
+			while(set.next()){
+				String friend = set.getString("from");
+				if(messages.get(friend) == null){
+					messages.put(friend, new Stack<String>());
+				}
+				messages.get(friend).push(set.getString("content"));
+			}
+			//删除已读数据
+			sql = "DELETE FROM qq_record WHERE `to`=?";
+			pstate = connect.prepareStatement(sql);
+			pstate.setString(1, username);
+			pstate.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return messages;
 	}
 	
 	/**

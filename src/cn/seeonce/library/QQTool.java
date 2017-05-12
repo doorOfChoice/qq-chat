@@ -54,23 +54,39 @@ public class QQTool {
 	}
 	
 	
-		
+	/**
+	 * 首字母转大写	
+	 * @param str
+	 * @return
+	 */
 	public static String first2up(String str){
 		return Character.toUpperCase(str.charAt(0)) + str.substring(1);
 	}
 	
+	/**
+	 * 获取绝对路径下的文件名
+	 * @param filename
+	 * @return
+	 */
 	public static String basename(String filename){
 		int start = filename.lastIndexOf("/");
 		return start == -1 ? filename : filename.substring(start + 1);
 	}
 	
-	public static byte[] getBytes(byte[] src, int offset, int len){
+	/**
+	 * 获取源字节数组下指定范围内的数据
+	 * @param src
+	 * @param offset
+	 * @param len
+	 * @return
+	 */
+	 public static byte[] getBytes(byte[] src, int offset, int len){
 		byte[] nBuf = new byte[len];
 		for(int i = 0; i < len; i++){
-			nBuf[i] = src[i + offset];
+		   nBuf[i] = src[i + offset];
 		}
-		
+		                
 		return nBuf;
-	}
-	
+     }
+
 }
