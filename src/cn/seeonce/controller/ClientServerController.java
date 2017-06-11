@@ -137,7 +137,6 @@ public class ClientServerController implements Runnable{
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
 					}
-					
 					String attr = msgXML.getAttribute();
 					
 					String methodName = null;

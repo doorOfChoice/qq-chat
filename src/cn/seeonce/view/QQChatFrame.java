@@ -158,7 +158,7 @@ public class QQChatFrame extends JFrame{
 			try {
 				int count = -1;
 				byte[] tempBuf; //base64转码后的byte[]
-				byte[] buf = new byte[1024];
+				byte[] buf = new byte[512];
 				String basename = QQTool.basename(filename);
 				fin = new DataInputStream(new FileInputStream(filename));
 				while((count = fin.read(buf)) != -1){
